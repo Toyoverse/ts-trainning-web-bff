@@ -3,8 +3,14 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+import * as back4app from './config/back4app';
+import { ValidationPipe } from '@nestjs/common';
+
 async function bootstrap() {
+  back4app.config();
+
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   const urls: string[] = process.env.CORS_ENABLED_URL.split('|');
 
   app.enableCors({

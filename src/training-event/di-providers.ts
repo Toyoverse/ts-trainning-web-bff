@@ -1,6 +1,6 @@
 import di from './di';
-import { TrainingEventRepositoryImpl } from './repositories/impl/training-event.repository';
-import { TrainingEventServiceImpl } from './services/impl/training-event.service';
+import { TrainingEventRepositoryImpl } from './repositories/impl/training-event.repository-impl';
+import { TrainingEventServiceImpl } from './services/impl/training-event.service-impl';
 
 const providers = [
   {

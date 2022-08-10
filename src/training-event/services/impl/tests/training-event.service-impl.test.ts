@@ -22,13 +22,16 @@ describe('Training event service tests', () => {
         name: 'Training Event',
         startAt: now,
         endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
         bondReward: 100,
         isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
       });
-
       const expectedSavedModel = new TrainingEventModel(dto);
 
       const repositoryResponse = new TrainingEventModel({
@@ -54,8 +57,12 @@ describe('Training event service tests', () => {
         name: 'Training Event',
         startAt: now,
         endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
         bondReward: 100,
         isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',

@@ -2,6 +2,7 @@ import { TrainingEventModel } from 'src/training-event/models/training-event.mod
 import { TrainingEventRepository } from '../training-event.repository';
 
 import * as Parse from 'parse/node';
+import strictTransportSecurity from 'helmet/dist/types/middlewares/strict-transport-security';
 
 export class TrainingEventRepositoryImpl implements TrainingEventRepository {
   private readonly DATABASE_CLASS = 'TrainingEvent';
@@ -34,12 +35,17 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
   private _buildParseObjectFromModel(
     model: TrainingEventModel,
   ): Parse.Object<Parse.Attributes> {
-    const parseObject = new Parse.Object(this.DATABASE_CLASS);
+    const parseObject = new Parse.Object('TrainingEvent');
     parseObject.set('name', model.name);
     parseObject.set('startAt', model.startAt);
     parseObject.set('endAt', model.endAt);
+    parseObject.set('story', model.story);
     parseObject.set('bondReward', model.bondReward);
     parseObject.set('isOngoing', model.isOngoing);
+    parseObject.set(
+      'toyoTrainingConfirmationMessage',
+      model.toyoTrainingConfirmationMessage,
+    );
     parseObject.set('inTrainingMessage', model.inTrainingMessage);
     parseObject.set('losesMessage', model.losesMessage);
     parseObject.set('rewardMessage', model.rewardMessage);
@@ -54,8 +60,12 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
       name: object.get('name'),
       startAt: object.get('startAt'),
       endAt: object.get('endAt'),
+      story: object.get('story'),
       bondReward: object.get('bondReward'),
       isOngoing: object.get('isOngoing'),
+      toyoTrainingConfirmationMessage: object.get(
+        'toyoTrainingConfirmationMessage',
+      ),
       inTrainingMessage: object.get('inTrainingMessage'),
       losesMessage: object.get('losesMessage'),
       rewardMessage: object.get('rewardMessage'),

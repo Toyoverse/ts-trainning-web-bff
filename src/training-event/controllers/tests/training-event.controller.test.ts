@@ -1,10 +1,12 @@
+import { HttpStatus } from '@nestjs/common';
 import 'reflect-metadata';
 import { TrainingEventCreateDto } from 'src/training-event/dto/training-event.dtos';
 import { TrainingEventService } from 'src/training-event/services/training-event.service';
+import { HttpResponse } from 'src/utils/http/response';
 import { TrainingEventController } from '../training-event.controller';
 
 describe('Training Event Controller Tests', () => {
-  const trainingEventService: TrainingEventService = {
+  const trainingEventService = {
     create: jest.fn(),
   };
   const trainingEventController = new TrainingEventController(
@@ -29,9 +31,19 @@ describe('Training Event Controller Tests', () => {
         rewardMessage: 'You won, congratulations',
       });
 
-      await trainingEventController.createTrainingEvent(dto);
+      const id = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
 
-      expect(trainingEventService.create).toBeCalled();
+      const expectedResponse = new HttpResponse({
+        statusCode: HttpStatus.CREATED,
+        message: 'Training event successfully created',
+        body: id,
+      });
+
+      trainingEventService.create.mockResolvedValue(id);
+
+      const response = await trainingEventController.create(dto);
+
+      expect(response).toEqual(expectedResponse);
     });
   });
 });

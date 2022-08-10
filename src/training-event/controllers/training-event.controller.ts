@@ -1,14 +1,13 @@
 import {
   Body,
-  ClassSerializerInterceptor,
   Controller,
   Get,
+  HttpStatus,
   Inject,
   Post,
-  UseInterceptors,
 } from '@nestjs/common';
-import { UUID } from 'src/types/common';
 import di from '../di';
+import { HttpResponse } from 'src/utils/http/response';
 import { TrainingEventCreateDto } from '../dto/training-event/create.dto';
 import { TrainingEventGetCurrentDto } from '../dto/training-event/get-current.dto';
 import { TrainingEventService } from '../services/training-event.service';
@@ -21,8 +20,13 @@ export class TrainingEventController {
   ) {}
 
   @Post()
-  createTrainingEvent(@Body() body: TrainingEventCreateDto): Promise<UUID> {
-    return this.trainingEventService.create(body);
+  async create(@Body() body: TrainingEventCreateDto): Promise<HttpResponse> {
+    const id = await this.trainingEventService.create(body);
+    return new HttpResponse({
+      statusCode: HttpStatus.CREATED,
+      message: 'Training event successfully created',
+      body: id,
+    });
   }
 
   @Get('/search/current')

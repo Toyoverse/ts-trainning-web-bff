@@ -2,7 +2,6 @@ import { TrainingEventModel } from 'src/training-event/models/training-event.mod
 import { TrainingEventRepository } from '../training-event.repository';
 
 import * as Parse from 'parse/node';
-import strictTransportSecurity from 'helmet/dist/types/middlewares/strict-transport-security';
 
 export class TrainingEventRepositoryImpl implements TrainingEventRepository {
   private readonly DATABASE_CLASS = 'TrainingEvent';

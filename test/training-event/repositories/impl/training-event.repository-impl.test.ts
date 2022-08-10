@@ -1,5 +1,5 @@
 import { TrainingEventModel } from 'src/training-event/models/training-event.model';
-import { TrainingEventRepositoryImpl } from '../training-event.repository-impl';
+import { TrainingEventRepositoryImpl } from 'src/training-event/repositories/impl/training-event.repository-impl';
 
 jest.useFakeTimers().setSystemTime(new Date('2022-08-09'));
 

@@ -1,9 +1,9 @@
-import { HttpStatus } from '@nestjs/common';
 import 'reflect-metadata';
+import { HttpStatus } from '@nestjs/common';
 import { TrainingEventCreateDto } from 'src/training-event/dto/training-event/create.dto';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { HttpResponse } from 'src/utils/http/response';
-import { TrainingEventController } from '../training-event.controller';
+import { TrainingEventController } from 'src/training-event/controllers/training-event.controller';
 
 describe('Training Event Controller Tests', () => {
   const trainingEventService = {

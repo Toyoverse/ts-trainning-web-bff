@@ -1,9 +1,9 @@
-import { NotFoundException } from '@nestjs/common';
 import 'reflect-metadata';
 
+import { NotFoundException } from '@nestjs/common';
 import { TrainingEventModel } from 'src/training-event/models/training-event.model';
-import { TrainingEventCreateDto } from '../../../dto/training-event/create.dto';
-import { TrainingEventServiceImpl } from '../training-event.service-impl';
+import { TrainingEventCreateDto } from 'src/training-event/dto/training-event/create.dto';
+import { TrainingEventServiceImpl } from 'src/training-event/services/impl/training-event.service-impl';
 
 describe('Training event service tests', () => {
   const trainingEventRepository = {

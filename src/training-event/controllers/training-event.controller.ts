@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Get,
+  Inject,
+  Post,
+  UseInterceptors,
+} from '@nestjs/common';
 import { UUID } from 'src/types/common';
 import di from '../di';
 import { TrainingEventCreateDto } from '../dto/training-event/create.dto';

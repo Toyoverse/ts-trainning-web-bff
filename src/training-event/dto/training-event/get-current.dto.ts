@@ -3,7 +3,9 @@ import { Transform } from 'class-transformer';
 export class TrainingEventGetCurrentDto {
   id: string;
   name: string;
+  @Transform(({ value }) => value.getTime())
   startAt: Date;
+  @Transform(({ value }) => value.getTime())
   endAt: Date;
   story: string;
   bondReward: number;

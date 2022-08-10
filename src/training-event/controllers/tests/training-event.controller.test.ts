@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { TrainingEventCreateDto } from 'src/training-event/dto/training-event.dtos';
 import { TrainingEventService } from 'src/training-event/services/training-event.service';
 import { TrainingEventController } from '../training-event.controller';
@@ -17,8 +18,12 @@ describe('Training Event Controller Tests', () => {
         name: 'Training Event',
         startAt: now,
         endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
         bondReward: 100,
         isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',

@@ -25,8 +25,12 @@ describe('Training event repository tests', () => {
         name: 'Training Event',
         startAt: now,
         endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
         bondReward: 100,
         isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
@@ -42,8 +46,13 @@ describe('Training event repository tests', () => {
       expect(mockParser.set).toBeCalledWith('name', input.name);
       expect(mockParser.set).toBeCalledWith('startAt', input.startAt);
       expect(mockParser.set).toBeCalledWith('endAt', input.endAt);
+      expect(mockParser.set).toBeCalledWith('story', input.story);
       expect(mockParser.set).toBeCalledWith('bondReward', input.bondReward);
       expect(mockParser.set).toBeCalledWith('isOngoing', input.isOngoing);
+      expect(mockParser.set).toBeCalledWith(
+        'toyoTrainingConfirmationMessage',
+        input.toyoTrainingConfirmationMessage,
+      );
       expect(mockParser.set).toBeCalledWith(
         'inTrainingMessage',
         input.inTrainingMessage,

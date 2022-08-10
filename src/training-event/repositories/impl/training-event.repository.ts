@@ -19,8 +19,13 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
     parseObject.set('name', model.name);
     parseObject.set('startAt', model.startAt);
     parseObject.set('endAt', model.endAt);
+    parseObject.set('story', model.story);
     parseObject.set('bondReward', model.bondReward);
     parseObject.set('isOngoing', model.isOngoing);
+    parseObject.set(
+      'toyoTrainingConfirmationMessage',
+      model.toyoTrainingConfirmationMessage,
+    );
     parseObject.set('inTrainingMessage', model.inTrainingMessage);
     parseObject.set('losesMessage', model.losesMessage);
     parseObject.set('rewardMessage', model.rewardMessage);

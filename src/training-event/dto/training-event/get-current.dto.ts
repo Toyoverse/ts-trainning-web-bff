@@ -1,9 +1,13 @@
+import { Transform } from 'class-transformer';
+
 export class TrainingEventGetCurrentDto {
   id: string;
   name: string;
   startAt: Date;
   endAt: Date;
+  story: string;
   bondReward: number;
+  toyoTrainingConfirmationMessage: string;
   inTrainingMessage: string;
   losesMessage: string;
   rewardMessage: string;
@@ -13,7 +17,9 @@ export class TrainingEventGetCurrentDto {
     name: string;
     startAt: Date;
     endAt: Date;
+    story: string;
     bondReward: number;
+    toyoTrainingConfirmationMessage: string;
     inTrainingMessage: string;
     losesMessage: string;
     rewardMessage: string;
@@ -23,7 +29,10 @@ export class TrainingEventGetCurrentDto {
       this.name = attrs.name;
       this.startAt = attrs.startAt;
       this.endAt = attrs.endAt;
+      this.story = attrs.story;
       this.bondReward = attrs.bondReward;
+      this.toyoTrainingConfirmationMessage =
+        attrs.toyoTrainingConfirmationMessage;
       this.inTrainingMessage = attrs.inTrainingMessage;
       this.losesMessage = attrs.losesMessage;
       this.rewardMessage = attrs.rewardMessage;

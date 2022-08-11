@@ -14,6 +14,19 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
     return model;
   }
 
+  async getById(id: string): Promise<TrainingBlowModel> {
+    const query = new Parse.Query(this.DATABASE_CLASS);
+    query.equalTo('objectId', id);
+
+    const object = await query.first();
+
+    if (!object) {
+      return undefined;
+    }
+
+    return this._buildModelFromParseObject(object);
+  }
+
   private _buildParseObjectFromModel(
     model: TrainingBlowModel,
   ): Parse.Object<Parse.Attributes> {
@@ -21,5 +34,15 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
     parseObject.set('name', model.name);
     parseObject.set('blowId', model.blowId);
     return parseObject;
+  }
+
+  private _buildModelFromParseObject(
+    object: Parse.Object<Parse.Attributes>,
+  ): TrainingBlowModel | PromiseLike<TrainingBlowModel> {
+    return new TrainingBlowModel({
+      id: object.id,
+      name: object.get('name'),
+      blowId: object.get('blowId'),
+    });
   }
 }

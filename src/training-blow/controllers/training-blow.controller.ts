@@ -1,4 +1,12 @@
-import { Body, Controller, HttpStatus, Inject, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { HttpResponse } from 'src/utils/http/response';
 import di from '../di';
 import { TrainingBlowCreateDto } from '../dto/create.dto';
@@ -18,5 +26,10 @@ export class TrainingBlowController {
       message: 'Training blow successfully created',
       body: id,
     });
+  }
+
+  @Get('/:id')
+  getById(@Param('id') id: string) {
+    return this._service.getById(id);
   }
 }

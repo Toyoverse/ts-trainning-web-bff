@@ -30,6 +30,7 @@ describe('Training Event Controller Tests', () => {
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
+        blows: ['1', '2'],
       });
 
       const id = '7a6f1652-0864-4a87-be10-dc96bcddf76b';

@@ -48,6 +48,8 @@ export class TrainingEventCreateDto {
   @IsNotEmpty()
   rewardMessage: string;
 
+  blows: string[];
+
   constructor(attrs?: {
     name: string;
     startAt: Date;
@@ -59,6 +61,7 @@ export class TrainingEventCreateDto {
     inTrainingMessage: string;
     losesMessage: string;
     rewardMessage: string;
+    blows: string[];
   }) {
     if (attrs) {
       this.name = attrs.name;
@@ -72,6 +75,7 @@ export class TrainingEventCreateDto {
       this.inTrainingMessage = attrs.inTrainingMessage;
       this.losesMessage = attrs.losesMessage;
       this.rewardMessage = attrs.rewardMessage;
+      this.blows = attrs.blows;
     }
   }
 }

@@ -1,9 +1,10 @@
 import 'reflect-metadata';
 
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TrainingEventModel } from 'src/training-event/models/training-event.model';
 import { TrainingEventCreateDto } from 'src/training-event/dto/training-event/create.dto';
 import { TrainingEventServiceImpl } from 'src/training-event/services/impl/training-event.service-impl';
+import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 
 describe('Training event service tests', () => {
   const trainingEventRepository = {
@@ -31,6 +32,7 @@ describe('Training event service tests', () => {
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
+        blows: ['1', '2', '3'],
       });
       const expectedSavedModel = new TrainingEventModel(dto);
 
@@ -46,6 +48,33 @@ describe('Training event service tests', () => {
       expect(trainingEventRepository.save).toBeCalledWith(expectedSavedModel);
 
       expect(repositoryResponse.id).toEqual(id);
+    });
+
+    test('Given dto with unexisting blow then throw exception', async () => {
+      const now = new Date();
+
+      const dto = new TrainingEventCreateDto({
+        name: 'Training Event',
+        startAt: now,
+        endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
+        bondReward: 100,
+        isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
+        inTrainingMessage: 'Training Doge',
+        losesMessage: 'Sorry, you lost',
+        rewardMessage: 'You won, congratulations',
+        blows: ['1', '2', '3'],
+      });
+
+      trainingEventRepository.save.mockRejectedValue(
+        new ConstraintViolationError(),
+      );
+
+      const t = async () => await trainingEventService.create(dto);
+      await expect(t).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -66,6 +95,7 @@ describe('Training event service tests', () => {
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
+        blows: ['1', '2'],
       });
 
       trainingEventRepository.getCurrent.mockResolvedValue(

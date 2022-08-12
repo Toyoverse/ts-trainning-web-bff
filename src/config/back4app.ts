@@ -1,5 +1,10 @@
 import * as Parse from 'parse/node';
 
+export enum classes {
+  TRAINING_EVENT = 'TrainingEvent',
+  TRAINING_BLOW = 'TrainingBlow',
+}
+
 export const config = () => {
   const BACK4APP_APPLICATION_ID = process.env.BACK4APP_APPLICATION_ID || '';
   const BACK4APP_JAVASCRIPT_KEY = process.env.BACK4APP_JAVASCRIPT_KEY;

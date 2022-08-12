@@ -10,6 +10,7 @@ export class TrainingEventModel {
   inTrainingMessage: string;
   losesMessage: string;
   rewardMessage: string;
+  blows: string[];
 
   constructor(attrs: {
     id?: string;
@@ -23,6 +24,7 @@ export class TrainingEventModel {
     inTrainingMessage: string;
     losesMessage: string;
     rewardMessage: string;
+    blows: string[];
   }) {
     this.id = attrs.id;
     this.name = attrs.name;
@@ -36,5 +38,6 @@ export class TrainingEventModel {
     this.inTrainingMessage = attrs.inTrainingMessage;
     this.losesMessage = attrs.losesMessage;
     this.rewardMessage = attrs.rewardMessage;
+    this.blows = attrs.blows;
   }
 }

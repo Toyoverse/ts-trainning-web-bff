@@ -2,12 +2,14 @@ import { TrainingEventModel } from 'src/training-event/models/training-event.mod
 import { TrainingEventRepository } from '../training-event.repository';
 
 import * as Parse from 'parse/node';
+import { classes } from 'src/config/back4app';
+import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 
 export class TrainingEventRepositoryImpl implements TrainingEventRepository {
   private readonly DATABASE_CLASS = 'TrainingEvent';
 
   async save(model: TrainingEventModel): Promise<TrainingEventModel> {
-    const parseObject = this._buildParseObjectFromModel(model);
+    const parseObject = await this._buildParseObjectFromModel(model);
     await parseObject.save();
 
     model.id = parseObject.id;
@@ -31,10 +33,10 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
     return this._buildModelFromParseObject(object);
   }
 
-  private _buildParseObjectFromModel(
+  private async _buildParseObjectFromModel(
     model: TrainingEventModel,
-  ): Parse.Object<Parse.Attributes> {
-    const parseObject = new Parse.Object('TrainingEvent');
+  ): Promise<Parse.Object<Parse.Attributes>> {
+    const parseObject = new Parse.Object(classes.TRAINING_EVENT);
     parseObject.set('name', model.name);
     parseObject.set('startAt', model.startAt);
     parseObject.set('endAt', model.endAt);
@@ -48,6 +50,20 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
     parseObject.set('inTrainingMessage', model.inTrainingMessage);
     parseObject.set('losesMessage', model.losesMessage);
     parseObject.set('rewardMessage', model.rewardMessage);
+
+    const blowsRelation = parseObject.relation('availableBlows');
+
+    const query = new Parse.Query(classes.TRAINING_BLOW);
+    for (const blowId of model.blows) {
+      query.equalTo('objectId', blowId);
+      const object = await query.first();
+
+      if (!object) {
+        throw new ConstraintViolationError('Blow not found with id ' + blowId);
+      }
+
+      blowsRelation.add(object);
+    }
     return parseObject;
   }
 
@@ -68,6 +84,7 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
       inTrainingMessage: object.get('inTrainingMessage'),
       losesMessage: object.get('losesMessage'),
       rewardMessage: object.get('rewardMessage'),
+      blows: [],
     });
   }
 }

@@ -1,5 +1,9 @@
+import * as Parse from 'parse/node';
+import { when } from 'jest-when';
 import { TrainingEventModel } from 'src/training-event/models/training-event.model';
 import { TrainingEventRepositoryImpl } from 'src/training-event/repositories/impl/training-event.repository-impl';
+import { classes } from 'src/config/back4app';
+import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 
 jest.useFakeTimers().setSystemTime(new Date('2022-08-09'));
 
@@ -8,6 +12,7 @@ const mockParseObject = {
   get: jest.fn(),
   set: jest.fn(),
   save: jest.fn(),
+  relation: jest.fn(),
 };
 const mockParseQuery = {
   first: jest.fn(),
@@ -18,7 +23,7 @@ const mockParseQuery = {
 
 jest.mock('parse/node', () => {
   return {
-    Object: jest.fn().mockImplementation(() => mockParseObject),
+    Object: jest.fn(),
     Query: jest.fn().mockImplementation(() => mockParseQuery),
   };
 });
@@ -47,39 +52,158 @@ describe('Training event repository tests', () => {
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
+        blows: ['1', '2', '3'],
       });
 
-      mockParseObject.save.mockImplementation(() => {
-        mockParseObject.id = id;
-        return mockParseObject;
+      const mockParseObjectConstructor = jest.mocked(Parse.Object);
+      const mockParseQueryConstructor = jest.mocked(Parse.Query);
+
+      const mockTrainingEventParseObject = {
+        id: undefined,
+        set: jest.fn(),
+        relation: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockTrainingBlowParseQuery = {
+        equalTo: jest.fn(),
+        first: jest.fn(),
+      };
+
+      when(mockParseObjectConstructor)
+        .calledWith(classes.TRAINING_EVENT)
+        .mockReturnValue(mockTrainingEventParseObject as unknown as any);
+
+      when(mockParseQueryConstructor)
+        .calledWith(classes.TRAINING_BLOW)
+        .mockReturnValue(mockTrainingBlowParseQuery as unknown as any);
+
+      for (const blowId of input.blows) {
+        mockTrainingBlowParseQuery.first.mockImplementationOnce(() => {
+          return { id: blowId };
+        });
+      }
+
+      mockTrainingEventParseObject.save.mockImplementation(() => {
+        mockTrainingEventParseObject.id = id;
+        return mockTrainingEventParseObject;
       });
+
+      const mockTrainingBlowsRelation = {
+        add: jest.fn(),
+      };
+
+      when(mockTrainingEventParseObject.relation).mockReturnValue(
+        mockTrainingBlowsRelation,
+      );
 
       const response = await repository.save(input);
 
-      expect(mockParseObject.set).toBeCalledWith('name', input.name);
-      expect(mockParseObject.set).toBeCalledWith('startAt', input.startAt);
-      expect(mockParseObject.set).toBeCalledWith('endAt', input.endAt);
-      expect(mockParseObject.set).toBeCalledWith(
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
+        'name',
+        input.name,
+      );
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
+        'startAt',
+        input.startAt,
+      );
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
+        'endAt',
+        input.endAt,
+      );
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
         'bondReward',
         input.bondReward,
       );
-      expect(mockParseObject.set).toBeCalledWith('isOngoing', input.isOngoing);
-      expect(mockParseObject.set).toBeCalledWith(
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
+        'isOngoing',
+        input.isOngoing,
+      );
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
         'inTrainingMessage',
         input.inTrainingMessage,
       );
-      expect(mockParseObject.set).toBeCalledWith(
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
         'losesMessage',
         input.losesMessage,
       );
-      expect(mockParseObject.set).toBeCalledWith(
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
         'rewardMessage',
         input.rewardMessage,
       );
 
-      expect(mockParseObject.save).toBeCalled();
+      for (const blowId of input.blows) {
+        expect(mockTrainingBlowParseQuery.equalTo).toBeCalledWith(
+          'objectId',
+          blowId,
+        );
+
+        expect(mockTrainingBlowsRelation.add).toBeCalledWith({ id: blowId });
+      }
+
+      expect(mockTrainingEventParseObject.save).toBeCalled();
 
       expect(response).toEqual({ id, ...input });
+    });
+
+    test('given unexisting blow then throw exception', async () => {
+      const now = new Date();
+
+      const input = new TrainingEventModel({
+        name: 'Training Event',
+        startAt: now,
+        endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
+        bondReward: 100,
+        isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
+        inTrainingMessage: 'Training Doge',
+        losesMessage: 'Sorry, you lost',
+        rewardMessage: 'You won, congratulations',
+        blows: ['1', '2', '3'],
+      });
+
+      const mockTrainingEventParseObject = {
+        id: undefined,
+        set: jest.fn(),
+        relation: jest.fn(),
+        save: jest.fn(),
+      };
+
+      const mockParseObjectConstructor = jest.mocked(Parse.Object);
+      const mockParseQueryConstructor = jest.mocked(Parse.Query);
+
+      when(mockParseObjectConstructor)
+        .calledWith(classes.TRAINING_EVENT)
+        .mockReturnValue(mockTrainingEventParseObject as unknown as any);
+
+      const mockTrainingBlowParseQuery = {
+        equalTo: jest.fn(),
+        first: jest.fn(),
+      };
+
+      when(mockParseObjectConstructor)
+        .calledWith(classes.TRAINING_EVENT)
+        .mockReturnValue(mockTrainingEventParseObject as unknown as any);
+
+      when(mockParseQueryConstructor)
+        .calledWith(classes.TRAINING_BLOW)
+        .mockReturnValue(mockTrainingBlowParseQuery as unknown as any);
+
+      mockParseQuery.first.mockResolvedValue(undefined);
+
+      const mockTrainingBlowsRelation = {
+        add: jest.fn().mockImplementation(),
+      };
+
+      when(mockTrainingEventParseObject.relation).mockReturnValue(
+        mockTrainingBlowsRelation,
+      );
+
+      const t = async () => await repository.save(input);
+      await expect(t).rejects.toThrow(ConstraintViolationError);
     });
   });
 
@@ -102,6 +226,7 @@ describe('Training event repository tests', () => {
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
+        blows: [],
       });
 
       mockParseObject.id = id;

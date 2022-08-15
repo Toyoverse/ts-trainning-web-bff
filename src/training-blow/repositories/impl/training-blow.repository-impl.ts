@@ -9,8 +9,6 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
   async save(model: TrainingBlowModel): Promise<TrainingBlowModel> {
     const parseObject = this._buildParseObjectFromModel(model);
     await parseObject.save();
-
-    model.id = parseObject.id;
     return model;
   }
 
@@ -19,7 +17,7 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
   ): Parse.Object<Parse.Attributes> {
     const parseObject = new Parse.Object(this.DATABASE_CLASS);
     parseObject.set('name', model.name);
-    parseObject.set('blowId', model.blowId);
+    parseObject.set('blowId', model.id);
     return parseObject;
   }
 }

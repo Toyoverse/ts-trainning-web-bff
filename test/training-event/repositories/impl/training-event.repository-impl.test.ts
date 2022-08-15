@@ -1,6 +1,9 @@
 import * as Parse from 'parse/node';
 import { when } from 'jest-when';
-import { TrainingEventModel } from 'src/training-event/models/training-event.model';
+import {
+  BlowConfigModel,
+  TrainingEventModel,
+} from 'src/training-event/models/training-event.model';
 import { TrainingEventRepositoryImpl } from 'src/training-event/repositories/impl/training-event.repository-impl';
 import { classes } from 'src/config/back4app';
 import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
@@ -45,7 +48,8 @@ describe('Training event repository tests', () => {
         endAt: now,
         story:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
-        bondReward: 100,
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
         isOngoing: false,
         toyoTrainingConfirmationMessage:
           'Are you sure you want to start training?',
@@ -53,6 +57,10 @@ describe('Training event repository tests', () => {
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
         blows: ['1', '2', '3'],
+        blowsConfig: [
+          new BlowConfigModel({ duration: 3, qty: 5 }),
+          new BlowConfigModel({ duration: 4, qty: 6 }),
+        ],
       });
 
       const mockParseObjectConstructor = jest.mocked(Parse.Object);
@@ -116,6 +124,10 @@ describe('Training event repository tests', () => {
         input.bondReward,
       );
       expect(mockTrainingEventParseObject.set).toBeCalledWith(
+        'bonusBondReward',
+        input.bonusBondReward,
+      );
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
         'isOngoing',
         input.isOngoing,
       );
@@ -141,12 +153,17 @@ describe('Training event repository tests', () => {
         expect(mockTrainingBlowsRelation.add).toBeCalledWith({ id: blowId });
       }
 
+      expect(mockTrainingEventParseObject.set).toBeCalledWith(
+        'blowsConfig',
+        input.blowsConfig,
+      );
+
       expect(mockTrainingEventParseObject.save).toBeCalled();
 
       expect(response).toEqual({ id, ...input });
     });
 
-    test('given unexisting blow then throw exception', async () => {
+    test('Given unexisting blow then throw exception', async () => {
       const now = new Date();
 
       const input = new TrainingEventModel({
@@ -155,7 +172,8 @@ describe('Training event repository tests', () => {
         endAt: now,
         story:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
-        bondReward: 100,
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
         isOngoing: false,
         toyoTrainingConfirmationMessage:
           'Are you sure you want to start training?',
@@ -163,6 +181,10 @@ describe('Training event repository tests', () => {
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
         blows: ['1', '2', '3'],
+        blowsConfig: [
+          new BlowConfigModel({ duration: 3, qty: 5 }),
+          new BlowConfigModel({ duration: 4, qty: 6 }),
+        ],
       });
 
       const mockTrainingEventParseObject = {
@@ -219,7 +241,8 @@ describe('Training event repository tests', () => {
         endAt: now,
         story:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
-        bondReward: 100,
+        bondReward: 0.75,
+        bonusBondReward: 0,
         isOngoing: false,
         toyoTrainingConfirmationMessage:
           'Are you sure you want to start training?',
@@ -227,6 +250,7 @@ describe('Training event repository tests', () => {
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
         blows: [],
+        blowsConfig: [],
       });
 
       mockParseObject.id = id;

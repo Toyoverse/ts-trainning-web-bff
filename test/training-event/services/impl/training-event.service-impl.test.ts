@@ -2,7 +2,10 @@ import 'reflect-metadata';
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TrainingEventModel } from 'src/training-event/models/training-event.model';
-import { TrainingEventCreateDto } from 'src/training-event/dto/training-event/create.dto';
+import {
+  BlowConfigCreateDto,
+  TrainingEventCreateDto,
+} from 'src/training-event/dto/training-event/create.dto';
 import { TrainingEventServiceImpl } from 'src/training-event/services/impl/training-event.service-impl';
 import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 
@@ -25,7 +28,8 @@ describe('Training event service tests', () => {
         endAt: now,
         story:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
-        bondReward: 100,
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
         isOngoing: false,
         toyoTrainingConfirmationMessage:
           'Are you sure you want to start training?',
@@ -33,6 +37,10 @@ describe('Training event service tests', () => {
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
         blows: ['1', '2', '3'],
+        blowsConfig: [
+          new BlowConfigCreateDto({ duration: 3, qty: 5 }),
+          new BlowConfigCreateDto({ duration: 4, qty: 6 }),
+        ],
       });
       const expectedSavedModel = new TrainingEventModel(dto);
 
@@ -59,7 +67,8 @@ describe('Training event service tests', () => {
         endAt: now,
         story:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
-        bondReward: 100,
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
         isOngoing: false,
         toyoTrainingConfirmationMessage:
           'Are you sure you want to start training?',
@@ -67,6 +76,10 @@ describe('Training event service tests', () => {
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
         blows: ['1', '2', '3'],
+        blowsConfig: [
+          new BlowConfigCreateDto({ duration: 3, qty: 5 }),
+          new BlowConfigCreateDto({ duration: 4, qty: 6 }),
+        ],
       });
 
       trainingEventRepository.save.mockRejectedValue(
@@ -88,14 +101,16 @@ describe('Training event service tests', () => {
         endAt: now,
         story:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
-        bondReward: 100,
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
         isOngoing: false,
         toyoTrainingConfirmationMessage:
           'Are you sure you want to start training?',
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
-        blows: ['1', '2'],
+        blows: [],
+        blowsConfig: [],
       });
 
       trainingEventRepository.getCurrent.mockResolvedValue(

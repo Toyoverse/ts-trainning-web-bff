@@ -1,13 +1,12 @@
-import { TrainingEventModel } from 'src/training-event/models/training-event.model';
-import { TrainingEventRepository } from '../training-event.repository';
-
 import * as Parse from 'parse/node';
+
 import { classes } from 'src/config/back4app';
 import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 
-export class TrainingEventRepositoryImpl implements TrainingEventRepository {
-  private readonly DATABASE_CLASS = 'TrainingEvent';
+import { TrainingEventModel } from 'src/training-event/models/training-event.model';
+import { TrainingEventRepository } from '../training-event.repository';
 
+export class TrainingEventRepositoryImpl implements TrainingEventRepository {
   async save(model: TrainingEventModel): Promise<TrainingEventModel> {
     const parseObject = await this._buildParseObjectFromModel(model);
     await parseObject.save();
@@ -19,7 +18,7 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
   async getCurrent(): Promise<TrainingEventModel> {
     const now = new Date();
 
-    const query = new Parse.Query(this.DATABASE_CLASS);
+    const query = new Parse.Query(classes.TRAINING_EVENT);
     query.equalTo('isOngoing', true);
     query.lessThanOrEqualTo('startAt', now);
     query.greaterThan('endAt', now);
@@ -42,6 +41,7 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
     parseObject.set('endAt', model.endAt);
     parseObject.set('story', model.story);
     parseObject.set('bondReward', model.bondReward);
+    parseObject.set('bonusBondReward', model.bonusBondReward);
     parseObject.set('isOngoing', model.isOngoing);
     parseObject.set(
       'toyoTrainingConfirmationMessage',
@@ -50,6 +50,7 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
     parseObject.set('inTrainingMessage', model.inTrainingMessage);
     parseObject.set('losesMessage', model.losesMessage);
     parseObject.set('rewardMessage', model.rewardMessage);
+    parseObject.set('blowsConfig', model.blowsConfig);
 
     const blowsRelation = parseObject.relation('availableBlows');
 
@@ -77,6 +78,7 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
       endAt: object.get('endAt'),
       story: object.get('story'),
       bondReward: object.get('bondReward'),
+      bonusBondReward: 0,
       isOngoing: object.get('isOngoing'),
       toyoTrainingConfirmationMessage: object.get(
         'toyoTrainingConfirmationMessage',
@@ -85,6 +87,7 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
       losesMessage: object.get('losesMessage'),
       rewardMessage: object.get('rewardMessage'),
       blows: [],
+      blowsConfig: [],
     });
   }
 }

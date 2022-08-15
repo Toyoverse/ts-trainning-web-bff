@@ -1,6 +1,9 @@
 import 'reflect-metadata';
 import { HttpStatus } from '@nestjs/common';
-import { TrainingEventCreateDto } from 'src/training-event/dto/training-event/create.dto';
+import {
+  BlowConfigCreateDto,
+  TrainingEventCreateDto,
+} from 'src/training-event/dto/training-event/create.dto';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { HttpResponse } from 'src/utils/http/response';
 import { TrainingEventController } from 'src/training-event/controllers/training-event.controller';
@@ -23,7 +26,8 @@ describe('Training Event Controller Tests', () => {
         endAt: now,
         story:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
-        bondReward: 100,
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
         isOngoing: false,
         toyoTrainingConfirmationMessage:
           'Are you sure you want to start training?',
@@ -31,6 +35,10 @@ describe('Training Event Controller Tests', () => {
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
         blows: ['1', '2'],
+        blowsConfig: [
+          new BlowConfigCreateDto({ duration: 3, qty: 5 }),
+          new BlowConfigCreateDto({ duration: 4, qty: 6 }),
+        ],
       });
 
       const id = '7a6f1652-0864-4a87-be10-dc96bcddf76b';

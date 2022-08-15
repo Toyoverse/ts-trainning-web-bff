@@ -10,33 +10,11 @@ import { ConstraintViolationError } from 'src/errors/constraint-violation.error'
 
 jest.useFakeTimers().setSystemTime(new Date('2022-08-09'));
 
-const mockParseObject = {
-  id: undefined,
-  get: jest.fn(),
-  set: jest.fn(),
-  save: jest.fn(),
-  relation: jest.fn(),
-};
-const mockParseQuery = {
-  first: jest.fn(),
-  equalTo: jest.fn(),
-  lessThanOrEqualTo: jest.fn(),
-  greaterThan: jest.fn(),
-};
-
-jest.mock('parse/node', () => {
-  return {
-    Object: jest.fn(),
-    Query: jest.fn().mockImplementation(() => mockParseQuery),
-  };
-});
+jest.mock('parse/node');
 
 describe('Training event repository tests', () => {
   const repository = new TrainingEventRepositoryImpl();
 
-  beforeEach(() => {
-    mockParseObject.id = undefined;
-  });
   describe('Save training events', () => {
     test('Given valid model when save then save', async () => {
       const id = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
@@ -214,8 +192,6 @@ describe('Training event repository tests', () => {
         .calledWith(classes.TRAINING_BLOW)
         .mockReturnValue(mockTrainingBlowParseQuery as unknown as any);
 
-      mockParseQuery.first.mockResolvedValue(undefined);
-
       const mockTrainingBlowsRelation = {
         add: jest.fn().mockImplementation(),
       };
@@ -253,21 +229,66 @@ describe('Training event repository tests', () => {
         blowsConfig: [],
       });
 
-      mockParseObject.id = id;
-      mockParseObject.get.mockImplementation((key) => expectedModel[key]);
+      const mockParseQueryConstructor = jest.mocked(Parse.Query);
 
-      mockParseQuery.first.mockResolvedValue(mockParseObject);
+      const mockTrainingEventParseObject = {
+        id: undefined,
+        get: jest.fn(),
+      };
+
+      const mockTrainingEventParseQuery = {
+        equalTo: jest.fn(),
+        lessThanOrEqualTo: jest.fn(),
+        greaterThan: jest.fn(),
+        first: jest.fn(),
+      };
+
+      when(mockParseQueryConstructor)
+        .calledWith(classes.TRAINING_EVENT)
+        .mockReturnValue(mockTrainingEventParseQuery as unknown as any);
+
+      mockTrainingEventParseObject.id = id;
+      mockTrainingEventParseObject.get.mockImplementation(
+        (key) => expectedModel[key],
+      );
+
+      mockTrainingEventParseQuery.first.mockResolvedValue(
+        mockTrainingEventParseObject,
+      );
 
       const model = await repository.getCurrent();
 
-      expect(mockParseQuery.equalTo).toBeCalledWith('isOngoing', true);
-      expect(mockParseQuery.lessThanOrEqualTo).toBeCalledWith('startAt', now);
-      expect(mockParseQuery.greaterThan).toBeCalledWith('endAt', now);
+      expect(mockTrainingEventParseQuery.equalTo).toBeCalledWith(
+        'isOngoing',
+        true,
+      );
+      expect(mockTrainingEventParseQuery.lessThanOrEqualTo).toBeCalledWith(
+        'startAt',
+        now,
+      );
+      expect(mockTrainingEventParseQuery.greaterThan).toBeCalledWith(
+        'endAt',
+        now,
+      );
 
       expect(model).toEqual(expectedModel);
     });
+
     test('when get current training event and there is no current training event then return undefined', async () => {
-      mockParseQuery.first.mockResolvedValue(undefined);
+      const mockParseQueryConstructor = jest.mocked(Parse.Query);
+
+      const mockTrainingEventParseQuery = {
+        equalTo: jest.fn(),
+        lessThanOrEqualTo: jest.fn(),
+        greaterThan: jest.fn(),
+        first: jest.fn(),
+      };
+
+      when(mockParseQueryConstructor)
+        .calledWith(classes.TRAINING_EVENT)
+        .mockReturnValue(mockTrainingEventParseQuery as unknown as any);
+
+      mockTrainingEventParseQuery.first.mockResolvedValue(undefined);
       const model = await repository.getCurrent();
       expect(model).toEqual(undefined);
     });

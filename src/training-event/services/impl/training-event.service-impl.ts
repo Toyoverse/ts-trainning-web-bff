@@ -46,10 +46,12 @@ export class TrainingEventServiceImpl implements TrainingEventService {
       endAt: model.endAt,
       story: model.story,
       bondReward: model.bondReward,
+      bonusBondReward: model.bonusBondReward,
       toyoTrainingConfirmationMessage: model.toyoTrainingConfirmationMessage,
       inTrainingMessage: model.inTrainingMessage,
       losesMessage: model.losesMessage,
       rewardMessage: model.rewardMessage,
+      blowsConfig: model.blowsConfig,
     });
   }
 }

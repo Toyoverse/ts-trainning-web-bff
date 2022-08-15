@@ -110,7 +110,10 @@ describe('Training event service tests', () => {
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
         blows: [],
-        blowsConfig: [],
+        blowsConfig: [
+          { duration: 4, qty: 3 },
+          { duration: 5, qty: 4 },
+        ],
       });
 
       trainingEventRepository.getCurrent.mockResolvedValue(
@@ -123,6 +126,9 @@ describe('Training event service tests', () => {
       expect(response.startAt).toEqual(mockRepositoryResponse.startAt);
       expect(response.endAt).toEqual(mockRepositoryResponse.endAt);
       expect(response.bondReward).toEqual(mockRepositoryResponse.bondReward);
+      expect(response.bonusBondReward).toEqual(
+        mockRepositoryResponse.bonusBondReward,
+      );
       expect(response.inTrainingMessage).toEqual(
         mockRepositoryResponse.inTrainingMessage,
       );
@@ -132,6 +138,7 @@ describe('Training event service tests', () => {
       expect(response.rewardMessage).toEqual(
         mockRepositoryResponse.rewardMessage,
       );
+      expect(response.blowsConfig).toEqual(mockRepositoryResponse.blowsConfig);
     });
     test('When get current training and there is no current training then throw not found exception', async () => {
       trainingEventRepository.getCurrent.mockResolvedValue(undefined);

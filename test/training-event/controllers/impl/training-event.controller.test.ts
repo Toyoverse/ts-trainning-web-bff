@@ -68,12 +68,17 @@ describe('Training Event Controller Tests', () => {
         endAt: now,
         story:
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
-        bondReward: 100,
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
         toyoTrainingConfirmationMessage:
           'Are you sure you want to start training?',
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
+        blowsConfig: [
+          { duration: 4, qty: 3 },
+          { duration: 5, qty: 4 },
+        ],
       });
 
       trainingEventService.getCurrent.mockResolvedValue(mockServiceResponse);

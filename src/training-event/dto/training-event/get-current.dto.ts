@@ -9,10 +9,12 @@ export class TrainingEventGetCurrentDto {
   endAt: Date;
   story: string;
   bondReward: number;
+  bonusBondReward: number;
   toyoTrainingConfirmationMessage: string;
   inTrainingMessage: string;
   losesMessage: string;
   rewardMessage: string;
+  blowsConfig: BlowConfigGetCurrentDto[];
 
   constructor(attrs?: {
     id: string;
@@ -21,23 +23,27 @@ export class TrainingEventGetCurrentDto {
     endAt: Date;
     story: string;
     bondReward: number;
+    bonusBondReward: number;
     toyoTrainingConfirmationMessage: string;
     inTrainingMessage: string;
     losesMessage: string;
     rewardMessage: string;
+    blowsConfig: BlowConfigGetCurrentDto[];
   }) {
     if (attrs) {
-      this.id = attrs.id;
-      this.name = attrs.name;
-      this.startAt = attrs.startAt;
-      this.endAt = attrs.endAt;
-      this.story = attrs.story;
-      this.bondReward = attrs.bondReward;
-      this.toyoTrainingConfirmationMessage =
-        attrs.toyoTrainingConfirmationMessage;
-      this.inTrainingMessage = attrs.inTrainingMessage;
-      this.losesMessage = attrs.losesMessage;
-      this.rewardMessage = attrs.rewardMessage;
+      Object.assign(this, attrs);
+    }
+  }
+}
+
+export class BlowConfigGetCurrentDto {
+  duration: number;
+  qty: number;
+
+  constructor(attrs?: { duration: number; qty: number }) {
+    if (attrs) {
+      this.duration = attrs.duration;
+      this.qty = attrs.qty;
     }
   }
 }

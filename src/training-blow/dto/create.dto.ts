@@ -7,12 +7,12 @@ export class TrainingBlowCreateDto {
 
   @IsString()
   @IsNotEmpty()
-  blowId: string;
+  id: string;
 
-  constructor(attrs?: { name: string; blowId: string }) {
+  constructor(attrs?: { name: string; id: string }) {
     if (attrs) {
       this.name = attrs.name;
-      this.blowId = attrs.blowId;
+      this.id = attrs.id;
     }
   }
 }

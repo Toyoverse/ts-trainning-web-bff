@@ -16,8 +16,8 @@ describe('Training blow controller test', () => {
       const mockId = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
 
       const input = new TrainingBlowCreateDto({
+        id: '1',
         name: 'Heavy Punch',
-        blowId: '1',
       });
       const expectedResponse = new HttpResponse({
         statusCode: HttpStatus.CREATED,

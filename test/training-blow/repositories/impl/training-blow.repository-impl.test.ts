@@ -30,20 +30,17 @@ describe('Training blow repository tests', () => {
   const repository = new TrainingBlowRepositoryImpl();
   describe('Save training blow', () => {
     test('Given valid model then save', async () => {
-      const mockId = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
       const input = new TrainingBlowModel({
         name: 'Heavy Punch',
-        blowId: '1',
+        id: '1',
       });
 
       mockParseObject.set('name', input.name);
-      mockParseObject.set('blowId', input.blowId);
+      mockParseObject.set('blowId', input.id);
 
-      mockParseObject.save.mockImplementation(() => {
-        mockParseObject.id = mockId;
-      });
+      mockParseObject.save.mockResolvedValue(mockParseObject);
 
-      const expected = new TrainingBlowModel({ ...input, id: mockId });
+      const expected = new TrainingBlowModel(input);
       const output = await repository.save(input);
 
       expect(mockParseObject.save).toBeCalled();

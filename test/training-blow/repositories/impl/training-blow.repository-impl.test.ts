@@ -1,7 +1,5 @@
 import * as Parse from 'parse/node';
 
-import { when } from 'jest-when';
-
 import { TrainingBlowModel } from 'src/training-blow/models/training-blow.model';
 import { TrainingBlowRepositoryImpl } from 'src/training-blow/repositories/impl/training-blow.repository-impl';
 
@@ -16,7 +14,7 @@ describe('Training blow repository tests', () => {
         id: '1',
       });
 
-      const mockParseConstructor = jest.mocked(Parse.Object);
+      const mockParseObjectConstructor = jest.mocked(Parse.Object);
 
       const mockParseObject = {
         id: undefined,
@@ -24,7 +22,7 @@ describe('Training blow repository tests', () => {
         save: jest.fn(),
       };
 
-      mockParseConstructor.mockReturnValue(mockParseObject as any);
+      mockParseObjectConstructor.mockReturnValue(mockParseObject as any);
 
       mockParseObject.set('name', input.name);
       mockParseObject.set('blowId', input.id);

@@ -14,7 +14,7 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
 
   async getById(id: string): Promise<TrainingBlowModel> {
     const query = new Parse.Query(this.DATABASE_CLASS);
-    query.equalTo('objectId', id);
+    query.equalTo('blowId', id);
 
     const object = await query.first();
 
@@ -38,9 +38,8 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
     object: Parse.Object<Parse.Attributes>,
   ): TrainingBlowModel | PromiseLike<TrainingBlowModel> {
     return new TrainingBlowModel({
-      id: object.id,
+      id: object.get('blowId'),
       name: object.get('name'),
-      blowId: object.get('blowId'),
     });
   }
 }

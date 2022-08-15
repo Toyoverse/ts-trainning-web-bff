@@ -37,7 +37,6 @@ describe('Training blow service tests', () => {
       const mockRepositoryResponse = new TrainingBlowModel({
         id: id,
         name: 'Heavy Punch',
-        blowId: '1',
       });
 
       const expectedResponse = new TrainingBlowGetByIdDto(

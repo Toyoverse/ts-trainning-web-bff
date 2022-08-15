@@ -41,7 +41,6 @@ describe('Training blow controller test', () => {
       const expectedResponse = new TrainingBlowGetByIdDto({
         id: id,
         name: 'Heavy Punch',
-        blowId: '1',
       });
 
       service.getById.mockResolvedValue(expectedResponse);

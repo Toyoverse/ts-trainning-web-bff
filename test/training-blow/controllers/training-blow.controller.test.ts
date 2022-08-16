@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 import { TrainingBlowController } from 'src/training-blow/controllers/training-blow.controller';
 import { TrainingBlowCreateDto } from 'src/training-blow/dto/create.dto';
 import { TrainingBlowGetByIdDto } from 'src/training-blow/dto/getbyid.dto';
-import { HttpResponse } from 'src/utils/http/response';
+import { CreateResponse } from 'src/utils/http/responses/create.response';
 
 describe('Training blow controller test', () => {
   const service = {
@@ -19,7 +19,7 @@ describe('Training blow controller test', () => {
         id: '1',
         name: 'Heavy Punch',
       });
-      const expectedResponse = new HttpResponse({
+      const expectedResponse = new CreateResponse({
         statusCode: HttpStatus.CREATED,
         message: 'Training blow successfully created',
         body: mockId,

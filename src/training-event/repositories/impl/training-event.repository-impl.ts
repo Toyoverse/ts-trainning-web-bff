@@ -1,7 +1,6 @@
 import * as Parse from 'parse/node';
 
 import { classes } from 'src/config/back4app';
-import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 
 import { TrainingEventModel } from 'src/training-event/models/training-event.model';
 import { TrainingEventRepository } from '../training-event.repository';

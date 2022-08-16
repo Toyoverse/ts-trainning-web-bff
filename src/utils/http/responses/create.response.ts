@@ -1,6 +1,11 @@
-export class HttpResponse {
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class CreateResponse {
+  @ApiProperty()
   statusCode: number;
+  @ApiPropertyOptional()
   message?: string;
+  @ApiPropertyOptional()
   body?: any;
 
   constructor(attrs?: { statusCode: number; message?: string; body?: any }) {

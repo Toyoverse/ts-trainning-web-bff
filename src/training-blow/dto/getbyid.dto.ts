@@ -1,5 +1,9 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 export class TrainingBlowGetByIdDto {
+  @ApiProperty()
   id: string;
+  @ApiProperty()
   name: string;
 
   constructor(attrs?: { id: string; name: string }) {

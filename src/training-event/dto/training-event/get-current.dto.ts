@@ -14,7 +14,7 @@ export class TrainingEventGetCurrentDto {
   inTrainingMessage: string;
   losesMessage: string;
   rewardMessage: string;
-  blows: TrainingBlowGetCurrentDto[];
+  blows: string[];
   blowsConfig: BlowConfigGetCurrentDto[];
 
   constructor(attrs?: {
@@ -29,7 +29,7 @@ export class TrainingEventGetCurrentDto {
     inTrainingMessage: string;
     losesMessage: string;
     rewardMessage: string;
-    blows: TrainingBlowGetCurrentDto[];
+    blows: string[];
     blowsConfig: BlowConfigGetCurrentDto[];
   }) {
     if (attrs) {

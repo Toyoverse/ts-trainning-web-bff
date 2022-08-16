@@ -75,6 +75,10 @@ describe('Training Event Controller Tests', () => {
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
+        blows: [
+          { id: '1', name: 'Heavy Punch' },
+          { id: '2', name: 'Serious Punch' },
+        ],
         blowsConfig: [
           { duration: 4, qty: 3 },
           { duration: 5, qty: 4 },

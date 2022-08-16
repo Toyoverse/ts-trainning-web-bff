@@ -14,8 +14,14 @@ describe('Training event service tests', () => {
     save: jest.fn(),
     getCurrent: jest.fn(),
   };
+
+  const trainingBlowService = {
+    getById: jest.fn(),
+  };
+
   const trainingEventService = new TrainingEventServiceImpl(
     trainingEventRepository,
+    trainingBlowService as any,
   );
 
   describe('Create training events', () => {
@@ -109,7 +115,7 @@ describe('Training event service tests', () => {
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
-        blows: [],
+        blows: ['1', '2'],
         blowsConfig: [
           { duration: 4, qty: 3 },
           { duration: 5, qty: 4 },
@@ -119,6 +125,12 @@ describe('Training event service tests', () => {
       trainingEventRepository.getCurrent.mockResolvedValue(
         mockRepositoryResponse,
       );
+
+      for (const blowId of mockRepositoryResponse.blows) {
+        trainingBlowService.getById.mockImplementation(() => {
+          return { id: blowId, name: `Heavy Punch ${blowId}` };
+        });
+      }
 
       const response = await trainingEventService.getCurrent();
       expect(response.id).toEqual(mockRepositoryResponse.id);

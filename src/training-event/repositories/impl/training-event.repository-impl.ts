@@ -50,27 +50,14 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
     parseObject.set('inTrainingMessage', model.inTrainingMessage);
     parseObject.set('losesMessage', model.losesMessage);
     parseObject.set('rewardMessage', model.rewardMessage);
+    parseObject.set('blows', model.blows);
     parseObject.set('blowsConfig', model.blowsConfig);
-
-    const blowsRelation = parseObject.relation('availableBlows');
-
-    const query = new Parse.Query(classes.TRAINING_BLOW);
-    for (const blowId of model.blows) {
-      query.equalTo('objectId', blowId);
-      const object = await query.first();
-
-      if (!object) {
-        throw new ConstraintViolationError('Blow not found with id ' + blowId);
-      }
-
-      blowsRelation.add(object);
-    }
     return parseObject;
   }
 
-  private _buildModelFromParseObject(
+  private async _buildModelFromParseObject(
     object: Parse.Object<Parse.Attributes>,
-  ): TrainingEventModel {
+  ): Promise<TrainingEventModel> {
     return new TrainingEventModel({
       id: object.id,
       name: object.get('name'),
@@ -78,7 +65,7 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
       endAt: object.get('endAt'),
       story: object.get('story'),
       bondReward: object.get('bondReward'),
-      bonusBondReward: 0,
+      bonusBondReward: object.get('bonusBondReward'),
       isOngoing: object.get('isOngoing'),
       toyoTrainingConfirmationMessage: object.get(
         'toyoTrainingConfirmationMessage',
@@ -86,8 +73,8 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
       inTrainingMessage: object.get('inTrainingMessage'),
       losesMessage: object.get('losesMessage'),
       rewardMessage: object.get('rewardMessage'),
-      blows: [],
-      blowsConfig: [],
+      blows: object.get('blows'),
+      blowsConfig: object.get('blowsConfig'),
     });
   }
 }

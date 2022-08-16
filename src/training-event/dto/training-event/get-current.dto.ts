@@ -14,6 +14,7 @@ export class TrainingEventGetCurrentDto {
   inTrainingMessage: string;
   losesMessage: string;
   rewardMessage: string;
+  blows: TrainingBlowGetCurrentDto[];
   blowsConfig: BlowConfigGetCurrentDto[];
 
   constructor(attrs?: {
@@ -28,10 +29,23 @@ export class TrainingEventGetCurrentDto {
     inTrainingMessage: string;
     losesMessage: string;
     rewardMessage: string;
+    blows: TrainingBlowGetCurrentDto[];
     blowsConfig: BlowConfigGetCurrentDto[];
   }) {
     if (attrs) {
       Object.assign(this, attrs);
+    }
+  }
+}
+
+export class TrainingBlowGetCurrentDto {
+  id: string;
+  name: string;
+
+  constructor(attrs?: { id: string; name: string }) {
+    if (attrs) {
+      this.id = attrs.id;
+      this.name = attrs.name;
     }
   }
 }

@@ -26,8 +26,8 @@ export class TrainingEventGetCurrentDto {
   losesMessage: string;
   @ApiProperty()
   rewardMessage: string;
-  @ApiProperty({ type: () => TrainingBlowGetCurrentDto })
-  blows: TrainingBlowGetCurrentDto[];
+  @ApiProperty()
+  blows: string[];
   @ApiProperty({ type: () => BlowConfigGetCurrentDto })
   blowsConfig: BlowConfigGetCurrentDto[];
 
@@ -43,7 +43,7 @@ export class TrainingEventGetCurrentDto {
     inTrainingMessage: string;
     losesMessage: string;
     rewardMessage: string;
-    blows: TrainingBlowGetCurrentDto[];
+    blows: string[];
     blowsConfig: BlowConfigGetCurrentDto[];
   }) {
     if (attrs) {

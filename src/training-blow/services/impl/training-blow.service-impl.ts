@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import di from 'src/training-blow/di';
 import { TrainingBlowCreateDto } from 'src/training-blow/dto/create.dto';
 import { TrainingBlowGetByIdDto } from 'src/training-blow/dto/getbyid.dto';
@@ -15,6 +20,13 @@ export class TrainingBlowServiceImpl implements TrainingBlowService {
   ) {}
 
   async create(dto: TrainingBlowCreateDto): Promise<UUID> {
+    const existingModelWithId = await this._repository.getById(dto.id);
+    if (existingModelWithId) {
+      throw new BadRequestException(
+        'There is already a training blow with id ' + dto.id,
+      );
+    }
+
     const model = new TrainingBlowModel(dto);
     const { id } = await this._repository.save(model);
     return id;

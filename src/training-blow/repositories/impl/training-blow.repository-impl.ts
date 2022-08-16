@@ -9,14 +9,12 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
   async save(model: TrainingBlowModel): Promise<TrainingBlowModel> {
     const parseObject = this._buildParseObjectFromModel(model);
     await parseObject.save();
-
-    model.id = parseObject.id;
     return model;
   }
 
   async getById(id: string): Promise<TrainingBlowModel> {
     const query = new Parse.Query(this.DATABASE_CLASS);
-    query.equalTo('objectId', id);
+    query.equalTo('blowId', id);
 
     const object = await query.first();
 
@@ -32,7 +30,7 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
   ): Parse.Object<Parse.Attributes> {
     const parseObject = new Parse.Object(this.DATABASE_CLASS);
     parseObject.set('name', model.name);
-    parseObject.set('blowId', model.blowId);
+    parseObject.set('blowId', model.id);
     return parseObject;
   }
 
@@ -40,9 +38,8 @@ export class TrainingBlowRepositoryImpl implements TrainingBlowRepository {
     object: Parse.Object<Parse.Attributes>,
   ): TrainingBlowModel | PromiseLike<TrainingBlowModel> {
     return new TrainingBlowModel({
-      id: object.id,
+      id: object.get('blowId'),
       name: object.get('name'),
-      blowId: object.get('blowId'),
     });
   }
 }

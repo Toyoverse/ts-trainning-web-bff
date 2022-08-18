@@ -6,7 +6,9 @@ import {
   Inject,
   Param,
   Post,
+  UseFilters,
 } from '@nestjs/common';
+import { ApiHttpErrorFilter } from 'src/filters/error.filter';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -27,6 +29,7 @@ export class TrainingBlowController {
     @Inject(di.TRAINING_BLOW_SERVICE) private _service: TrainingBlowService,
   ) {}
 
+  @UseFilters(new ApiHttpErrorFilter())
   @ApiCreatedResponse({
     description: 'The training blow has been succesfully created',
   })

@@ -1,13 +1,13 @@
 import 'reflect-metadata';
 
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TrainingEventModel } from 'src/training-event/models/training-event.model';
 import {
   BlowConfigCreateDto,
   TrainingEventCreateDto,
 } from 'src/training-event/dto/training-event/create.dto';
 import { TrainingEventServiceImpl } from 'src/training-event/services/impl/training-event.service-impl';
-import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
+import { ConstraintViolationError, NotFoundError } from 'src/errors';
+import { when } from 'jest-when';
 
 describe('Training event service tests', () => {
   const trainingEventRepository = {
@@ -64,7 +64,7 @@ describe('Training event service tests', () => {
       expect(repositoryResponse.id).toEqual(id);
     });
 
-    test('Given dto with unexisting blow then throw exception', async () => {
+    test('Given dto with unexisting blows then throw exception', async () => {
       const now = new Date();
 
       const dto = new TrainingEventCreateDto({
@@ -88,12 +88,12 @@ describe('Training event service tests', () => {
         ],
       });
 
-      trainingEventRepository.save.mockRejectedValue(
-        new ConstraintViolationError(),
-      );
+      when(trainingBlowService.getById)
+        .calledWith('2')
+        .mockRejectedValue(new NotFoundError());
 
       const t = async () => await trainingEventService.create(dto);
-      await expect(t).rejects.toThrow(BadRequestException);
+      await expect(t).rejects.toThrow(ConstraintViolationError);
     });
   });
 
@@ -155,7 +155,7 @@ describe('Training event service tests', () => {
     test('When get current training and there is no current training then throw not found exception', async () => {
       trainingEventRepository.getCurrent.mockResolvedValue(undefined);
       const t = async () => await trainingEventService.getCurrent();
-      await expect(t).rejects.toThrow(NotFoundException);
+      await expect(t).rejects.toThrow(NotFoundError);
     });
   });
 });

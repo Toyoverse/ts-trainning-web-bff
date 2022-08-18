@@ -4,6 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConstraintViolationError } from 'src/errors';
+import { NotFoundError } from 'src/errors/not-found.error';
+
 import di from 'src/training-blow/di';
 import { TrainingBlowCreateDto } from 'src/training-blow/dto/create.dto';
 import { TrainingBlowGetByIdDto } from 'src/training-blow/dto/getbyid.dto';
@@ -22,8 +25,8 @@ export class TrainingBlowServiceImpl implements TrainingBlowService {
   async create(dto: TrainingBlowCreateDto): Promise<UUID> {
     const existingModelWithId = await this._repository.getById(dto.id);
     if (existingModelWithId) {
-      throw new BadRequestException(
-        'There is already a training blow with id ' + dto.id,
+      throw new ConstraintViolationError(
+        `Training blow with id ${dto.id} already exists`,
       );
     }
 
@@ -35,7 +38,7 @@ export class TrainingBlowServiceImpl implements TrainingBlowService {
   async getById(id: string): Promise<TrainingBlowGetByIdDto> {
     const model = await this._repository.getById(id);
     if (!model) {
-      throw new NotFoundException('Training blow not found with id ' + id);
+      throw new NotFoundError('Training blow not found with id ' + id);
     }
     return model;
   }

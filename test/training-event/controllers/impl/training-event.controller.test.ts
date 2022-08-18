@@ -5,7 +5,7 @@ import {
   TrainingEventCreateDto,
 } from 'src/training-event/dto/training-event/create.dto';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
-import { HttpResponse } from 'src/utils/http/response';
+import { CreateResponse } from 'src/utils/http/responses/create.response';
 import { TrainingEventController } from 'src/training-event/controllers/training-event.controller';
 
 describe('Training Event Controller Tests', () => {
@@ -43,7 +43,7 @@ describe('Training Event Controller Tests', () => {
 
       const id = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
 
-      const expectedResponse = new HttpResponse({
+      const expectedResponse = new CreateResponse({
         statusCode: HttpStatus.CREATED,
         message: 'Training event successfully created',
         body: id,
@@ -75,10 +75,7 @@ describe('Training Event Controller Tests', () => {
         inTrainingMessage: 'Training Doge',
         losesMessage: 'Sorry, you lost',
         rewardMessage: 'You won, congratulations',
-        blows: [
-          { id: '1', name: 'Heavy Punch' },
-          { id: '2', name: 'Serious Punch' },
-        ],
+        blows: ['1', '2'],
         blowsConfig: [
           { duration: 4, qty: 3 },
           { duration: 5, qty: 4 },

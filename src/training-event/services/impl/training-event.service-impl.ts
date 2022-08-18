@@ -38,13 +38,6 @@ export class TrainingEventServiceImpl implements TrainingEventService {
       throw new NotFoundError('There is no current training event');
     }
 
-    const blows = [];
-
-    for (const blowId of model.blows) {
-      const blow = await this._trainingBlowService.getById(blowId);
-      blows.push(blow);
-    }
-
     return new TrainingEventGetCurrentDto({
       id: model.id,
       name: model.name,
@@ -57,7 +50,7 @@ export class TrainingEventServiceImpl implements TrainingEventService {
       inTrainingMessage: model.inTrainingMessage,
       losesMessage: model.losesMessage,
       rewardMessage: model.rewardMessage,
-      blows,
+      blows: model.blows,
       blowsConfig: model.blowsConfig,
     });
   }

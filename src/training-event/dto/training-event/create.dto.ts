@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -10,52 +11,65 @@ import {
 } from 'class-validator';
 
 export class TrainingEventCreateDto {
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
   startAt: Date;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
   endAt: Date;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   story: string;
 
+  @ApiProperty()
   @IsBoolean()
   isOngoing: boolean;
 
+  @ApiProperty()
   @IsNumber()
   bondReward: number;
 
+  @ApiProperty()
   @IsNumber()
   bonusBondReward: number;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   toyoTrainingConfirmationMessage: string;
 
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   inTrainingMessage: string;
 
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   losesMessage: string;
 
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   rewardMessage: string;
 
+  @ApiProperty()
   @IsString({ each: true })
   blows: string[];
 
+  @ApiProperty({ type: () => BlowConfigCreateDto })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => BlowConfigCreateDto)
@@ -96,10 +110,12 @@ export class TrainingEventCreateDto {
 }
 
 export class BlowConfigCreateDto {
+  @ApiProperty()
   @IsNotEmpty()
   @IsNumber()
   duration: number;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsNumber()
   qty: number;

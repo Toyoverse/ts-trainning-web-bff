@@ -1,20 +1,34 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 export class TrainingEventGetCurrentDto {
+  @ApiProperty()
   id: string;
+  @ApiProperty()
   name: string;
+  @ApiProperty()
   @Transform(({ value }) => value.getTime())
   startAt: Date;
+  @ApiProperty()
   @Transform(({ value }) => value.getTime())
   endAt: Date;
+  @ApiProperty()
   story: string;
+  @ApiProperty()
   bondReward: number;
+  @ApiProperty()
   bonusBondReward: number;
+  @ApiProperty()
   toyoTrainingConfirmationMessage: string;
+  @ApiProperty()
   inTrainingMessage: string;
+  @ApiProperty()
   losesMessage: string;
+  @ApiProperty()
   rewardMessage: string;
-  blows: TrainingBlowGetCurrentDto[];
+  @ApiProperty()
+  blows: string[];
+  @ApiProperty({ type: () => BlowConfigGetCurrentDto })
   blowsConfig: BlowConfigGetCurrentDto[];
 
   constructor(attrs?: {
@@ -29,7 +43,7 @@ export class TrainingEventGetCurrentDto {
     inTrainingMessage: string;
     losesMessage: string;
     rewardMessage: string;
-    blows: TrainingBlowGetCurrentDto[];
+    blows: string[];
     blowsConfig: BlowConfigGetCurrentDto[];
   }) {
     if (attrs) {
@@ -39,7 +53,9 @@ export class TrainingEventGetCurrentDto {
 }
 
 export class TrainingBlowGetCurrentDto {
+  @ApiProperty()
   id: string;
+  @ApiProperty()
   name: string;
 
   constructor(attrs?: { id: string; name: string }) {
@@ -51,7 +67,9 @@ export class TrainingBlowGetCurrentDto {
 }
 
 export class BlowConfigGetCurrentDto {
+  @ApiProperty()
   duration: number;
+  @ApiProperty()
   qty: number;
 
   constructor(attrs?: { duration: number; qty: number }) {

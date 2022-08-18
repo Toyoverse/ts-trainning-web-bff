@@ -14,6 +14,7 @@ import { TrainingEventCreateDto } from '../../dto/training-event/create.dto';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 import { TrainingBlowService } from 'src/training-blow/services/training-blow.service';
+import { NotFoundError } from 'src/errors';
 
 @Injectable()
 export class TrainingEventServiceImpl implements TrainingEventService {
@@ -25,22 +26,16 @@ export class TrainingEventServiceImpl implements TrainingEventService {
   ) {}
 
   async create(dto: TrainingEventCreateDto): Promise<UUID> {
-    try {
-      let model = new TrainingEventModel(dto);
-      model = await this._repository.save(model);
-      return model.id;
-    } catch (error) {
-      if (error instanceof ConstraintViolationError) {
-        throw new BadRequestException(error.message);
-      }
-    }
+    let model = new TrainingEventModel(dto);
+    model = await this._repository.save(model);
+    return model.id;
   }
 
   async getCurrent(): Promise<TrainingEventGetCurrentDto> {
     const model = await this._repository.getCurrent();
 
     if (!model) {
-      throw new NotFoundException('There is no current training event');
+      throw new NotFoundError('There is no current training event');
     }
 
     const blows = [];

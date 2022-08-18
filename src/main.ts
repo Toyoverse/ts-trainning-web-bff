@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import * as back4app from './config/back4app';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { ApiHttpErrorFilter } from './filters/error.filter';
 
 async function bootstrap() {
   back4app.config();
@@ -12,6 +13,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+  app.useGlobalFilters(new ApiHttpErrorFilter());
+
   const urls: string[] = process.env.CORS_ENABLED_URL.split('|');
 
   app.enableCors({

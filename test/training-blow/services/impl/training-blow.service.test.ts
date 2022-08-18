@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConstraintViolationError, NotFoundError } from 'src/errors';
 import { TrainingBlowCreateDto } from 'src/training-blow/dto/create.dto';
 import { TrainingBlowGetByIdDto } from 'src/training-blow/dto/getbyid.dto';
 import { TrainingBlowModel } from 'src/training-blow/models/training-blow.model';
@@ -41,7 +42,7 @@ describe('Training blow service tests', () => {
       });
 
       const t = async () => await service.create(input);
-      await expect(t).rejects.toThrow(BadRequestException);
+      await expect(t).rejects.toThrow(ConstraintViolationError);
     });
   });
 
@@ -74,7 +75,7 @@ describe('Training blow service tests', () => {
         await service.getById(id);
       };
 
-      expect(t).rejects.toThrow(NotFoundException);
+      expect(t).rejects.toThrow(NotFoundError);
     });
   });
 });

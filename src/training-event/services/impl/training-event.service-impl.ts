@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UUID } from 'src/types/common';
 import di from '../../di';
 import trainingBlowDi from 'src/training-blow/di';
@@ -27,8 +22,22 @@ export class TrainingEventServiceImpl implements TrainingEventService {
 
   async create(dto: TrainingEventCreateDto): Promise<UUID> {
     let model = new TrainingEventModel(dto);
+    await this._checkBlows(model);
+
     model = await this._repository.save(model);
     return model.id;
+  }
+
+  private async _checkBlows(model: TrainingEventModel) {
+    for (const blowId of model.blows) {
+      try {
+        await this._trainingBlowService.getById(blowId);
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          throw new ConstraintViolationError(error.message);
+        }
+      }
+    }
   }
 
   async getCurrent(): Promise<TrainingEventGetCurrentDto> {

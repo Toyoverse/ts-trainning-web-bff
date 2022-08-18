@@ -6,7 +6,8 @@ import {
   TrainingEventCreateDto,
 } from 'src/training-event/dto/training-event/create.dto';
 import { TrainingEventServiceImpl } from 'src/training-event/services/impl/training-event.service-impl';
-import { NotFoundError } from 'src/errors';
+import { ConstraintViolationError, NotFoundError } from 'src/errors';
+import { when } from 'jest-when';
 
 describe('Training event service tests', () => {
   const trainingEventRepository = {
@@ -61,6 +62,38 @@ describe('Training event service tests', () => {
       expect(trainingEventRepository.save).toBeCalledWith(expectedSavedModel);
 
       expect(repositoryResponse.id).toEqual(id);
+    });
+
+    test('Given dto with unexisting blows then throw exception', async () => {
+      const now = new Date();
+
+      const dto = new TrainingEventCreateDto({
+        name: 'Training Event',
+        startAt: now,
+        endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
+        isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
+        inTrainingMessage: 'Training Doge',
+        losesMessage: 'Sorry, you lost',
+        rewardMessage: 'You won, congratulations',
+        blows: ['1', '2', '3'],
+        blowsConfig: [
+          new BlowConfigCreateDto({ duration: 3, qty: 5 }),
+          new BlowConfigCreateDto({ duration: 4, qty: 6 }),
+        ],
+      });
+
+      when(trainingBlowService.getById)
+        .calledWith('2')
+        .mockRejectedValue(new NotFoundError());
+
+      const t = async () => await trainingEventService.create(dto);
+      await expect(t).rejects.toThrow(ConstraintViolationError);
     });
   });
 

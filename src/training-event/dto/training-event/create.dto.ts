@@ -112,6 +112,7 @@ export class TrainingEventCreateDto {
 export class TrainingEventConfigDto {
   @ApiProperty()
   @IsNotEmpty()
+  @Type(() => TrainingEventCreateDto)
   eventConfig: TrainingEventCreateDto;
 }
 

@@ -109,6 +109,12 @@ export class TrainingEventCreateDto {
   }
 }
 
+export class TrainingEventConfigDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  eventConfig: TrainingEventCreateDto;
+}
+
 export class BlowConfigCreateDto {
   @ApiProperty()
   @IsNotEmpty()

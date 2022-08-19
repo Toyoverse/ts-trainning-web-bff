@@ -8,7 +8,10 @@ import {
 } from '@nestjs/common';
 import di from '../di';
 import { CreateResponse, ErrorResponse } from 'src/utils/http/responses';
-import { TrainingEventCreateDto } from '../dto/training-event/create.dto';
+import {
+  TrainingEventConfigDto,
+  TrainingEventCreateDto,
+} from '../dto/training-event/create.dto';
 import { TrainingEventGetCurrentDto } from '../dto/training-event/get-current.dto';
 import { TrainingEventService } from '../services/training-event.service';
 import {
@@ -36,7 +39,7 @@ export class TrainingEventController {
     description: 'Bad Request.',
     type: () => ErrorResponse,
   })
-  async create(@Body() body: TrainingEventCreateDto): Promise<CreateResponse> {
+  async create(@Body() body: TrainingEventConfigDto): Promise<CreateResponse> {
     const id = await this.trainingEventService.create(body);
     return new CreateResponse({
       statusCode: HttpStatus.CREATED,

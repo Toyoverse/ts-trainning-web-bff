@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import di from '../di';
 import { TrainingStartDto } from '../dto/start.dto';
+import { TrainingModel } from '../models/training.model';
 import { TrainingService } from '../services/training.service';
 
 @Controller('/training')
@@ -19,12 +20,12 @@ export class TrainingController {
   ) {}
 
   @Post()
-  start(@Body() body: TrainingStartDto): Promise<any> {
+  start(@Body() body: TrainingStartDto): Promise<TrainingModel> {
     return this.trainingService.start(body);
   }
 
   @Put('/:id')
-  close(@Param('id') id: string): Promise<any> {
+  close(@Param('id') id: string): Promise<TrainingModel> {
     return this.trainingService.close(id);
   }
 

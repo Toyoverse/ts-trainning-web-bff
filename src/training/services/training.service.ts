@@ -1,7 +1,8 @@
 import { TrainingStartDto } from '../dto/start.dto';
+import { TrainingModel } from '../models/training.model';
 
 export interface TrainingService {
-  start(request: TrainingStartDto): Promise<any>;
-  close(request: string): Promise<any>;
+  start(request: TrainingStartDto): Promise<TrainingModel>;
+  close(request: string): Promise<TrainingModel>;
   list(): Promise<any>;
 }

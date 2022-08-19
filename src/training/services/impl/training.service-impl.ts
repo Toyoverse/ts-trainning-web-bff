@@ -12,13 +12,13 @@ export class TrainingServiceImpl implements TrainingService {
     private trainingRepository: TrainingRepository,
   ) {}
 
-  async start(dto: TrainingStartDto): Promise<any> {
+  async start(dto: TrainingStartDto): Promise<TrainingModel> {
     let model = new TrainingModel(dto);
     model = await this.trainingRepository.start(model);
     return model;
   }
 
-  async close(id: string): Promise<any> {
+  async close(id: string): Promise<TrainingModel> {
     const data = await this.trainingRepository.close(id);
     return data;
   }

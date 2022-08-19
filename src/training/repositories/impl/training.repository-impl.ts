@@ -3,56 +3,49 @@ import { Eth } from 'web3-eth';
 import { soliditySha3 } from 'web3-utils';
 import { TrainingModel } from 'src/training/models/training.model';
 import { TrainingRepository } from '../training.repository';
+import { InternalServerErrorException } from '@nestjs/common';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
 
 export class TrainingRepositoryImpl implements TrainingRepository {
   private readonly DATABASE_CLASS = 'ToyoTraining';
+  private readonly TRAINING_DURATION_IN_HOURS = 8;
 
   async start(model: TrainingModel): Promise<TrainingModel> {
-    const trainingObj = new Parse.Object(this.DATABASE_CLASS);
+    const training = new Parse.Object(this.DATABASE_CLASS);
 
     try {
-      const trainingEventQuery = this.generateObjectQuery('TrainingEvent');
-      trainingEventQuery.equalTo('objectId', model.trainingId);
-
-      const ongoingEvent = await trainingEventQuery.find();
-
-      const playerQuery = this.generateObjectQuery('Players');
-      playerQuery.equalTo('objectId', model.playerId);
-
-      const player = await playerQuery.find();
-
-      const toyoQuery = this.generateObjectQuery('Toyo');
-      toyoQuery.equalTo('objectId', model.toyoId);
-
-      const toyo = await toyoQuery.find();
+      const trainingEvent = await this.findByObjectId(
+        'TrainingEvent',
+        model.trainingId,
+      );
+      const player = await this.findByObjectId('Players', model.playerId);
+      const toyo = await this.findByObjectId('Toyo', model.toyoId);
 
       const now = new Date();
-      const endAt = new Date(Date.now() + 8 * (60 * 60 * 1000));
+      const endAt = new Date(
+        Date.now() + this.TRAINING_DURATION_IN_HOURS * (60 * 60 * 1000),
+      );
 
-      trainingObj.set('toyo', toyo[0]);
-      trainingObj.set('player', player[0]);
-      trainingObj.set('startAt', now);
-      trainingObj.set('endAt', endAt);
-      trainingObj.set('trainingEvent', ongoingEvent[0]);
-      trainingObj.set('combination', model.sequence);
+      training.set('toyo', toyo);
+      training.set('player', player);
+      training.set('startAt', now);
+      training.set('endAt', endAt);
+      training.set('trainingEvent', trainingEvent);
+      training.set('combination', model.sequence);
 
-      await trainingObj.save();
+      await training.save();
 
       return model;
     } catch (e) {
-      throw new Error(e);
+      throw new InternalServerErrorException(e);
     }
   }
 
-  async close(id: string): Promise<any> {
+  async close(id: string): Promise<TrainingModel> {
     try {
-      const query = this.generateObjectQuery(this.DATABASE_CLASS);
-      query.equalTo('objectId', id);
-
-      const training = await query.first();
+      const training = await this.findByObjectId(this.DATABASE_CLASS, id);
 
       const now = new Date();
       const signature = this.generateTrainingSignature(id);
@@ -62,9 +55,11 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       await training.save();
 
-      return training;
+      const trainingModel = this.buildModelFromParseObject(training);
+
+      return trainingModel;
     } catch (e) {
-      throw new Error(e);
+      throw new InternalServerErrorException(e);
     }
   }
 
@@ -77,8 +72,19 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       return trainingList;
     } catch (e) {
-      throw new Error(e);
+      throw new InternalServerErrorException(e);
     }
+  }
+
+  private buildModelFromParseObject(
+    object: Parse.Object<Parse.Attributes>,
+  ): TrainingModel {
+    return new TrainingModel({
+      playerId: object.get('player'),
+      sequence: object.get('sequence'),
+      toyoId: object.get('toyo'),
+      trainingId: object.get('signature'),
+    });
   }
 
   private generateTrainingSignature(trainingId: string): string {
@@ -91,10 +97,14 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     return signature;
   }
 
-  private generateObjectQuery(obj: string): Parse.Query {
+  private async findByObjectId(
+    obj: string,
+    objectId: string,
+  ): Promise<Parse.Object<Parse.Attributes>> {
     const Obj = Parse.Object.extend(obj);
     const query: Parse.Query = new Parse.Query(Obj);
+    const result = await query.get(objectId);
 
-    return query;
+    return result;
   }
 }

@@ -1,8 +1,10 @@
 import * as Parse from 'parse/node';
 
 export enum classes {
-  TRAINING_EVENT = 'TrainingEvent',
+  CARD_TRAINING_REWARD = 'CardTrainingReward',
+  TOYO_PERSONA_TRAINING_EVENT = 'ToyoPersonaTrainingEvent',
   TRAINING_BLOW = 'TrainingBlow',
+  TRAINING_EVENT = 'TrainingEvent',
 }
 
 export const config = () => {

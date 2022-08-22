@@ -2,6 +2,7 @@ import * as Parse from 'parse/node';
 
 export enum classes {
   CARD_TRAINING_REWARD = 'CardTrainingReward',
+  TOYO_PERSONA = 'ToyoPersona',
   TOYO_PERSONA_TRAINING_EVENT = 'ToyoPersonaTrainingEvent',
   TRAINING_BLOW = 'TrainingBlow',
   TRAINING_EVENT = 'TrainingEvent',

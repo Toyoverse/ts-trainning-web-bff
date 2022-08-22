@@ -18,9 +18,14 @@ describe('Toyo persona training event service impl tests', () => {
       getById: jest.fn(),
     };
 
+    const mockToyoPersonaService = {
+      getById: jest.fn(),
+    };
+
     const service = new ToyoPersonaTrainingEventServiceImpl(
       mockRepository,
       mockBlowsService as any,
+      mockToyoPersonaService,
     );
 
     test('Given valid create dto then save toyo persona training event', async () => {
@@ -35,6 +40,10 @@ describe('Toyo persona training event service impl tests', () => {
           rotText: 'Lorem ipsum dolor sit amet.',
           type: '1',
         }),
+      });
+
+      mockToyoPersonaService.getById.mockResolvedValue({
+        id: input.toyoPersonaId,
       });
 
       for (const blowId of input.correctBlowsCombinationIds) {
@@ -75,13 +84,38 @@ describe('Toyo persona training event service impl tests', () => {
       await expect(t).rejects.toThrow(ConstraintViolationError);
     });
 
-    test('when fail to get training blow by id by unexpected error then re-throw error', async () => {
+    test('when fail to get training blow by id and error is unexpected then re-throw error', async () => {
       const input = new ToyoPersonaTrainingEventCreateDto({
         correctBlowsCombinationIds: ['1', '2', '3'],
       } as any);
 
       const unexpectedError = new Error();
       mockBlowsService.getById.mockRejectedValue(unexpectedError);
+
+      const t = async () => service.create(input);
+
+      await expect(t).rejects.toThrow(unexpectedError);
+    });
+
+    test('Given create dto with unexisting toyo persona then throw constraint violation error', async () => {
+      const input = new ToyoPersonaTrainingEventCreateDto({
+        toyoPersonaId: '1',
+      } as any);
+
+      mockToyoPersonaService.getById.mockRejectedValue(new NotFoundError());
+
+      const t = async () => service.create(input);
+
+      await expect(t).rejects.toThrow(ConstraintViolationError);
+    });
+
+    test('When fail to get toyo persona by id and error is unexpected then re-throw error', async () => {
+      const input = new ToyoPersonaTrainingEventCreateDto({
+        toyoPersonaId: '1',
+      } as any);
+
+      const unexpectedError = new Error();
+      mockToyoPersonaService.getById.mockRejectedValue(unexpectedError);
 
       const t = async () => service.create(input);
 

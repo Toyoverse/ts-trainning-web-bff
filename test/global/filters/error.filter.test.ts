@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConstraintViolationError, NotFoundError } from 'src/errors';
-import { ApiHttpErrorFilter } from 'src/filters/error.filter';
+import { ApiHttpErrorFilter } from 'src/global/filters/error.filter';
 
 describe('Error Filter Tests', () => {
   const filter = new ApiHttpErrorFilter();

@@ -15,19 +15,19 @@ export class TrainingStartDto {
 
   @IsNotEmpty()
   @IsArray()
-  sequence: string[];
+  combination: string[];
 
   constructor(attrs?: {
     trainingId: string;
     playerId: string;
     toyoId: string;
-    sequence: string[];
+    combination: string[];
   }) {
     if (attrs) {
       this.trainingId = attrs.trainingId;
       this.playerId = attrs.playerId;
       this.toyoId = attrs.toyoId;
-      this.sequence = attrs.sequence;
+      this.combination = attrs.combination;
     }
   }
 }

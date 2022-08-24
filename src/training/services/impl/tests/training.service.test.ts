@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { TrainingStartDto } from 'src/training/dto/start.dto';
-import { TrainingModel } from 'src/training/models/training.model';
+import { TrainingStartDto } from '../../../../training/dto/start.dto';
+import { TrainingModel } from '../../../../training/models/training.model';
 import { TrainingServiceImpl } from '../training.service-impl';
 
 describe('Training service tests', () => {
@@ -11,27 +11,35 @@ describe('Training service tests', () => {
   };
 
   const trainingService = new TrainingServiceImpl(trainingRepository);
+  const now = new Date();
+  const endAt = new Date(Date.now() + 8 * (60 * 60 * 1000));
 
   describe('start', () => {
     test('should return success', async () => {
       const dto = new TrainingStartDto({
         playerId: 'SJhHPvzbw7',
-        sequence: ['3', '2', '1'],
+        combination: ['3', '2', '1'],
         toyoId: 'tkWoczXeYJ',
         trainingId: 'hWefhSbzF5',
       });
 
-      const expectedData = new TrainingModel(dto);
-
-      const repositoryResponse = new TrainingModel(dto);
+      const repositoryResponse = new TrainingModel({
+        startAt: now,
+        signature: undefined,
+        endAt: endAt,
+        claimedAt: undefined,
+        combination: ['3', '2', '1'],
+        toyo: 'tkWoczXeYJ',
+        training: 'hWefhSbzF5',
+      });
 
       trainingRepository.start.mockResolvedValue(repositoryResponse);
 
       const resp = await trainingService.start(dto);
 
-      expect(trainingRepository.start).toBeCalledWith(expectedData);
+      expect(trainingRepository.start).toBeCalledWith(dto);
 
-      expect(repositoryResponse).toEqual(resp);
+      expect(resp).toEqual(repositoryResponse);
     });
   });
 
@@ -40,10 +48,14 @@ describe('Training service tests', () => {
       const trainingId = 'SP4GwD8VmU';
 
       const repositoryResponse = new TrainingModel({
-        playerId: 'SJhHPvzbw7',
-        sequence: ['3', '2', '1'],
-        toyoId: 'tkWoczXeYJ',
-        trainingId: 'hWefhSbzF5',
+        startAt: now,
+        signature:
+          '0x59ef7b920e9d56855a14241711bb22b2468d558daa89b566f505aae31ad2e8177713886b93305dd19bb340aed7bfcd4bf085a10827c445fe5675165b9b0b8af11c',
+        endAt: endAt,
+        claimedAt: now,
+        combination: ['3', '2', '1'],
+        toyo: 'tkWoczXeYJ',
+        training: 'hWefhSbzF5',
       });
 
       trainingRepository.close.mockResolvedValue(repositoryResponse);
@@ -56,11 +68,23 @@ describe('Training service tests', () => {
 
   describe('list', () => {
     test('should return success', async () => {
-      const repositoryResponse = [];
+      const playerId = 'SJhHPvzbw7';
+
+      const repositoryResponse = [
+        {
+          startAt: now,
+          signature: undefined,
+          endAt: endAt,
+          claimedAt: undefined,
+          combination: ['3', '2', '1'],
+          toyoId: 'tkWoczXeYJ',
+          trainingId: 'hWefhSbzF5',
+        },
+      ];
 
       trainingRepository.list.mockResolvedValue(repositoryResponse);
 
-      const resp = await trainingService.list();
+      const resp = await trainingService.list(playerId);
 
       expect(repositoryResponse).toEqual(resp);
     });

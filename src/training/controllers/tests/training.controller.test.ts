@@ -15,7 +15,7 @@ describe('Training controller tests', () => {
     test('should return success', async () => {
       const dto = new TrainingStartDto({
         playerId: 'SJhHPvzbw7',
-        sequence: ['3', '2', '1'],
+        combination: ['3', '2', '1'],
         toyoId: 'tkWoczXeYJ',
         trainingId: 'hWefhSbzF5',
       });
@@ -38,7 +38,9 @@ describe('Training controller tests', () => {
 
   describe('List trainings', () => {
     test('should return success', async () => {
-      await trainingController.list();
+      const playerId = 'SJhHPvzbw7';
+
+      await trainingController.list(playerId);
 
       expect(trainingService.list).toBeCalled();
     });

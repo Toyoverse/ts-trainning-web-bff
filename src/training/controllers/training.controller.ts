@@ -29,8 +29,8 @@ export class TrainingController {
     return this.trainingService.close(id);
   }
 
-  @Get()
-  list(): Promise<any> {
-    return this.trainingService.list();
+  @Get('/:playerId')
+  list(@Param('playerId') playerId: string): Promise<TrainingModel[]> {
+    return this.trainingService.list(playerId);
   }
 }

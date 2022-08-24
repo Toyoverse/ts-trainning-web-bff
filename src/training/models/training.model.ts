@@ -1,18 +1,27 @@
 export class TrainingModel {
-  trainingId: string;
-  playerId: string;
-  toyoId: string;
-  sequence: string[];
+  training: string;
+  toyo: string;
+  startAt: Date;
+  endAt: Date;
+  claimedAt: Date;
+  signature: string;
+  combination: string[];
 
   constructor(attrs: {
-    trainingId: string;
-    playerId: string;
-    toyoId: string;
-    sequence: string[];
+    training: string;
+    toyo: string;
+    startAt: Date;
+    endAt: Date;
+    claimedAt: Date;
+    signature: string;
+    combination: string[];
   }) {
-    this.trainingId = attrs.trainingId;
-    this.playerId = attrs.playerId;
-    this.toyoId = attrs.toyoId;
-    this.sequence = attrs.sequence;
+    this.training = attrs.training;
+    this.toyo = attrs.toyo;
+    this.startAt = attrs.startAt;
+    this.endAt = attrs.endAt;
+    this.claimedAt = attrs.claimedAt;
+    this.signature = attrs.signature;
+    this.combination = attrs.combination;
   }
 }

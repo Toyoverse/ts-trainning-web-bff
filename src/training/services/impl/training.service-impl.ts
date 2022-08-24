@@ -1,4 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import di from '../../di';
 import { TrainingRepository } from '../../../training/repositories/training.repository';
 import { TrainingService } from '../training.service';
@@ -13,18 +18,27 @@ export class TrainingServiceImpl implements TrainingService {
   ) {}
 
   async start(dto: TrainingStartDto): Promise<TrainingModel> {
-    let model = new TrainingModel(dto);
-    model = await this.trainingRepository.start(model);
+    const model = await this.trainingRepository.start(dto);
+
+    if (!model) {
+      throw new InternalServerErrorException('An error occurred');
+    }
+
     return model;
   }
 
   async close(id: string): Promise<TrainingModel> {
-    const data = await this.trainingRepository.close(id);
-    return data;
+    const model = await this.trainingRepository.close(id);
+
+    if (!model) {
+      throw new BadRequestException('Training not found');
+    }
+
+    return model;
   }
 
-  async list(): Promise<any> {
-    const data = await this.trainingRepository.list();
+  async list(playerId: string): Promise<TrainingModel[]> {
+    const data = await this.trainingRepository.list(playerId);
     return data;
   }
 }

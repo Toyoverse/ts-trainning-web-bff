@@ -1,3 +1,4 @@
+import { when } from 'jest-when';
 import 'reflect-metadata';
 import { ConstraintViolationError, NotFoundError } from 'src/errors';
 import { TrainingBlowGetByIdDto } from 'src/training-blow/dto/getbyid.dto';
@@ -5,29 +6,37 @@ import {
   CardTrainingRewardCreateDto,
   ToyoPersonaTrainingEventCreateDto,
 } from 'src/training-event/dto/toyo-persona-training-event/create.dto';
+import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
+import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
 import { ToyoPersonaTrainingEventModel } from 'src/training-event/models/toyo-persona-training-event.model';
 import { ToyoPersonaTrainingEventServiceImpl } from 'src/training-event/services/impl/toyo-persona-training-event.service-impl';
 
 describe('Toyo persona training event service impl tests', () => {
+  const mockRepository = {
+    save: jest.fn(),
+    getByTrainingEventAndToyoPersona: jest.fn(),
+  };
+
+  const mockTrainingEventService = {
+    getCurrent: jest.fn(),
+  };
+
+  const mockBlowsService = {
+    getById: jest.fn(),
+  };
+
+  const mockToyoPersonaService = {
+    getById: jest.fn(),
+  };
+
+  const service = new ToyoPersonaTrainingEventServiceImpl(
+    mockRepository as any,
+    mockTrainingEventService as any,
+    mockBlowsService as any,
+    mockToyoPersonaService,
+  );
+
   describe('Create toyo persona training event', () => {
-    const mockRepository = {
-      save: jest.fn(),
-    };
-
-    const mockBlowsService = {
-      getById: jest.fn(),
-    };
-
-    const mockToyoPersonaService = {
-      getById: jest.fn(),
-    };
-
-    const service = new ToyoPersonaTrainingEventServiceImpl(
-      mockRepository,
-      mockBlowsService as any,
-      mockToyoPersonaService,
-    );
-
     test('Given valid create dto then save toyo persona training event', async () => {
       const input = new ToyoPersonaTrainingEventCreateDto({
         trainingEventId: '1',
@@ -120,6 +129,68 @@ describe('Toyo persona training event service impl tests', () => {
       const t = async () => service.create(input);
 
       await expect(t).rejects.toThrow(unexpectedError);
+    });
+  });
+
+  describe('Get current toyo persona training event', () => {
+    test('Return current toyo persona training event', async () => {
+      const toyoPersonaId = '1';
+      const trainingEventId = '2';
+
+      const repositoryResponse = new ToyoPersonaTrainingEventModel({
+        id: '1',
+        trainingEventId: trainingEventId,
+        toyoPersonaId: toyoPersonaId,
+        correctBlowsCombinationIds: ['1', '2', '3'],
+        cardReward: new CardTrainingRewardModel({
+          id: '1',
+          cardId: '1',
+          description: '1',
+          name: 'Tatsu training event card',
+          rotText: 'Lorem impsum',
+          type: '1',
+        }),
+      });
+
+      const expectedResponse = new ToyoPersonaTrainingEventGetCurrentDto(
+        repositoryResponse as any,
+      );
+
+      mockTrainingEventService.getCurrent.mockResolvedValue({
+        id: trainingEventId,
+      });
+
+      when(mockRepository.getByTrainingEventAndToyoPersona)
+        .calledWith(trainingEventId, toyoPersonaId)
+        .mockResolvedValue(repositoryResponse);
+
+      const response = await service.getCurrent(toyoPersonaId);
+
+      expect(response).toEqual(expectedResponse);
+    });
+
+    test('When there is no current training event then throw not found error', async () => {
+      const toyoPersonaId = '1';
+
+      mockTrainingEventService.getCurrent.mockRejectedValue(
+        new NotFoundError(),
+      );
+
+      const t = async () => await service.getCurrent(toyoPersonaId);
+
+      await expect(t).rejects.toThrow(NotFoundError);
+    });
+
+    test('When there is no current toyo persona training event then throw not found error', async () => {
+      const toyoPersonaId = '1';
+
+      mockRepository.getByTrainingEventAndToyoPersona.mockResolvedValue(
+        undefined,
+      );
+
+      const t = async () => await service.getCurrent(toyoPersonaId);
+
+      await expect(t).rejects.toThrow(NotFoundError);
     });
   });
 });

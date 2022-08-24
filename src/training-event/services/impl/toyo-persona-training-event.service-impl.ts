@@ -14,6 +14,8 @@ import { ToyoPersonaTrainingEventRepository } from 'src/training-event/repositor
 import { ToyoPersonaTrainingEventService } from '../toyo-persona-training-event.service';
 import { ToyoPersonaTrainingEventCreateDto } from 'src/training-event/dto/toyo-persona-training-event/create.dto';
 import { ToyoPersonaTrainingEventModel } from 'src/training-event/models/toyo-persona-training-event.model';
+import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
+import { TrainingEventService } from '../training-event.service';
 
 @Injectable()
 export class ToyoPersonaTrainingEventServiceImpl
@@ -22,6 +24,8 @@ export class ToyoPersonaTrainingEventServiceImpl
   constructor(
     @Inject(di.TOYO_PERSONA_TRAINING_EVENT_REPOSITORY)
     private _repository: ToyoPersonaTrainingEventRepository,
+    @Inject(di.TRAINING_EVENT_SERVICE)
+    private _trainingEventService: TrainingEventService,
     @Inject(trainingBlowsDi.TRAINING_BLOW_SERVICE)
     private _blowsService: TrainingBlowService,
     @Inject(toyoDi.TOYO_PERSONA_SERVICE)
@@ -59,5 +63,23 @@ export class ToyoPersonaTrainingEventServiceImpl
         throw new ConstraintViolationError(error.message);
       throw error;
     }
+  }
+
+  async getCurrent(
+    toyoPersonaId: string,
+  ): Promise<ToyoPersonaTrainingEventGetCurrentDto> {
+    const trainingEvent = await this._trainingEventService.getCurrent();
+
+    const model = await this._repository.getByTrainingEventAndToyoPersona(
+      trainingEvent.id,
+      toyoPersonaId,
+    );
+
+    if (!model) {
+      throw new NotFoundError(
+        'There is no current training event for toyo persona',
+      );
+    }
+    return new ToyoPersonaTrainingEventGetCurrentDto(model as any);
   }
 }

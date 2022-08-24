@@ -80,4 +80,55 @@ export class ToyoPersonaTrainingEventRepositoryImpl
     );
     return toyoPersonaTrainingEventParseObject;
   }
+
+  async getByTrainingEventAndToyoPersona(
+    trainingEventId: string,
+    toyoPersonaId: string,
+  ): Promise<ToyoPersonaTrainingEventModel> {
+    const parseQuery = new Parse.Query(classes.TOYO_PERSONA_TRAINING_EVENT);
+
+    const trainingEventParseObject = new Parse.Object(classes.TRAINING_EVENT, {
+      id: trainingEventId,
+    });
+    parseQuery.equalTo('trainingEvent', trainingEventParseObject);
+
+    parseQuery.equalTo('toyoPersona', toyoPersonaId);
+
+    const toyoPersonaTrainingEventParseObject = await parseQuery.first();
+
+    if (!toyoPersonaTrainingEventParseObject) {
+      return undefined;
+    }
+
+    return this._buildToyoPersonaTrainingEventModel(
+      toyoPersonaTrainingEventParseObject,
+    );
+  }
+
+  private async _buildToyoPersonaTrainingEventModel(
+    toyoPersonaTrainingEventParseObject: Parse.Object<Parse.Attributes>,
+  ): Promise<ToyoPersonaTrainingEventModel> {
+    const cardRewardParseObject: Parse.Object<Parse.Attributes> =
+      toyoPersonaTrainingEventParseObject.get('cardReward');
+
+    await cardRewardParseObject.fetch();
+
+    return new ToyoPersonaTrainingEventModel({
+      id: toyoPersonaTrainingEventParseObject.id,
+      toyoPersonaId: toyoPersonaTrainingEventParseObject.get('toyoPersona'),
+      trainingEventId:
+        toyoPersonaTrainingEventParseObject.get('trainingEvent').id,
+      correctBlowsCombinationIds: toyoPersonaTrainingEventParseObject.get(
+        'correctBlowsCombination',
+      ),
+      cardReward: new CardTrainingRewardModel({
+        id: cardRewardParseObject.id,
+        cardId: cardRewardParseObject.get('cardId'),
+        description: cardRewardParseObject.get('description'),
+        name: cardRewardParseObject.get('name'),
+        rotText: cardRewardParseObject.get('rotText'),
+        type: cardRewardParseObject.get('type'),
+      }),
+    });
+  }
 }

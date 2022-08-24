@@ -5,13 +5,19 @@ import {
   CardTrainingRewardCreateDto,
   ToyoPersonaTrainingEventCreateDto,
 } from 'src/training-event/dto/toyo-persona-training-event/create.dto';
+import {
+  CardTrainingRewardGetCurrentDto,
+  ToyoPersonaTrainingEventGetCurrentDto,
+} from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
+import { when } from 'jest-when';
 
 describe('Toyo persona training events controller tests', () => {
   const mockService = {
     create: jest.fn(),
+    getCurrent: jest.fn(),
   };
 
-  const controller = new ToyoPersonaTrainingEventController(mockService);
+  const controller = new ToyoPersonaTrainingEventController(mockService as any);
   describe('Create toyo persona training event', () => {
     test('Given valid dto then create', async () => {
       const body = new ToyoPersonaTrainingEventCreateDto({
@@ -37,6 +43,34 @@ describe('Toyo persona training events controller tests', () => {
         body: mockId,
       });
       const response = await controller.create(body);
+
+      expect(response).toEqual(expectedResponse);
+    });
+  });
+  describe('Get current toyo persona training event', () => {
+    test('Return current toyo persona training event', async () => {
+      const toyoPersonaId = '1';
+
+      const expectedResponse = new ToyoPersonaTrainingEventGetCurrentDto({
+        id: '1',
+        trainingEventId: '1',
+        toyoPersonaId,
+        correctBlowsCombinationIds: ['1', '3', '5', '8'],
+        cardReward: new CardTrainingRewardGetCurrentDto({
+          id: '1',
+          name: 'Card Reward',
+          description: 'Lorem ipsum dolor sit amet.',
+          cardId: '1',
+          rotText: 'Lorem ipsum dolor sit amet.',
+          type: '1',
+        }),
+      });
+
+      when(mockService.getCurrent)
+        .calledWith(toyoPersonaId)
+        .mockResolvedValue(expectedResponse);
+
+      const response = await controller.getCurrent(toyoPersonaId);
 
       expect(response).toEqual(expectedResponse);
     });

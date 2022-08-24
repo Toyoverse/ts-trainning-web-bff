@@ -3,7 +3,11 @@ import {
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
-import { ConstraintViolationError, NotFoundError } from 'src/errors';
+import {
+  BadRequestError,
+  ConstraintViolationError,
+  NotFoundError,
+} from 'src/errors';
 import { ApiHttpErrorFilter } from 'src/global/filters/error.filter';
 
 describe('Error Filter Tests', () => {
@@ -78,6 +82,30 @@ describe('Error Filter Tests', () => {
     const expectedResponse = new NotFoundException();
 
     expect(mockResponse.status).toBeCalledWith(HttpStatus.NOT_FOUND);
+    expect(mockResponse.json).toBeCalledWith(expectedResponse.getResponse());
+  });
+
+  test('When catch a bad request error then forward http bad request exception', () => {
+    const error = new BadRequestError();
+
+    const mockResponse = {
+      status: jest.fn().mockImplementation(() => mockResponse),
+      json: jest.fn(),
+    };
+
+    const ctx = {
+      getResponse: () => mockResponse,
+    };
+
+    const host = {
+      switchToHttp: () => ctx,
+    };
+
+    filter.catch(error, host as any);
+
+    const expectedResponse = new BadRequestException();
+
+    expect(mockResponse.status).toBeCalledWith(HttpStatus.BAD_REQUEST);
     expect(mockResponse.json).toBeCalledWith(expectedResponse.getResponse());
   });
 

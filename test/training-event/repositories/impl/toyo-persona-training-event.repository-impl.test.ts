@@ -160,4 +160,144 @@ describe('Toyo persona training event repository tests', () => {
       await expect(t).rejects.toThrow(ConstraintViolationError);
     });
   });
+
+  describe('Get toyo persona training event by training event and toyo persona', () => {
+    test('When there is a toyo persona training event then return it', async () => {
+      const toyoPersonaId = '1';
+      const trainingEventId = '1';
+
+      const expectedResponse = new ToyoPersonaTrainingEventModel({
+        id: '1',
+        toyoPersonaId: toyoPersonaId,
+        trainingEventId: trainingEventId,
+        correctBlowsCombinationIds: ['1', '2'],
+        cardReward: new CardTrainingRewardModel({
+          id: '1',
+          name: 'Event card',
+          cardId: '1',
+          description:
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et.',
+          rotText:
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et.',
+          type: '1',
+        }),
+      });
+
+      const parseQueryConstructor = jest.mocked(Parse.Query);
+      const parseObjectConstructor = jest.mocked(Parse.Object);
+
+      const mockTrainingEventParseObject = {
+        id: trainingEventId,
+      };
+
+      when(parseObjectConstructor)
+        .calledWith(classes.TRAINING_EVENT, {
+          id: trainingEventId,
+        })
+        .mockReturnValue(mockTrainingEventParseObject as any);
+
+      const mockToyoPersonaTrainingEventParseQuery = {
+        equalTo: jest.fn(),
+        first: jest.fn(),
+      };
+
+      const mockToyoPersonaTrainingEventParseObject = {
+        id: expectedResponse.id,
+        get: jest.fn(),
+      };
+
+      const mockCardRewardParseObject = {
+        id: expectedResponse.cardReward.id,
+        get: jest.fn(),
+        fetch: jest.fn(),
+      };
+
+      when(mockToyoPersonaTrainingEventParseObject.get)
+        .calledWith('toyoPersona')
+        .mockReturnValue(toyoPersonaId);
+
+      when(mockToyoPersonaTrainingEventParseObject.get)
+        .calledWith('trainingEvent')
+        .mockReturnValue(mockTrainingEventParseObject);
+
+      when(mockToyoPersonaTrainingEventParseObject.get)
+        .calledWith('correctBlowsCombination')
+        .mockReturnValue(expectedResponse.correctBlowsCombinationIds);
+
+      when(mockToyoPersonaTrainingEventParseObject.get)
+        .calledWith('cardReward')
+        .mockReturnValue(mockCardRewardParseObject);
+
+      when(mockCardRewardParseObject.get)
+        .calledWith('name')
+        .mockReturnValue(expectedResponse.cardReward.name);
+
+      when(mockCardRewardParseObject.get)
+        .calledWith('description')
+        .mockReturnValue(expectedResponse.cardReward.description);
+
+      when(mockCardRewardParseObject.get)
+        .calledWith('type')
+        .mockReturnValue(expectedResponse.cardReward.type);
+
+      when(mockCardRewardParseObject.get)
+        .calledWith('rotText')
+        .mockReturnValue(expectedResponse.cardReward.rotText);
+
+      when(mockCardRewardParseObject.get)
+        .calledWith('cardId')
+        .mockReturnValue(expectedResponse.cardReward.cardId);
+
+      parseQueryConstructor.mockReturnValue(
+        mockToyoPersonaTrainingEventParseQuery as any,
+      );
+
+      mockToyoPersonaTrainingEventParseQuery.first.mockResolvedValue(
+        mockToyoPersonaTrainingEventParseObject,
+      );
+
+      const response = await repository.getByTrainingEventAndToyoPersona(
+        toyoPersonaId,
+        trainingEventId,
+      );
+
+      expect(mockToyoPersonaTrainingEventParseQuery.equalTo).toBeCalledWith(
+        'toyoPersona',
+        toyoPersonaId,
+      );
+      expect(mockToyoPersonaTrainingEventParseQuery.equalTo).toBeCalledWith(
+        'trainingEvent',
+        mockTrainingEventParseObject,
+      );
+
+      expect(mockCardRewardParseObject.fetch).toBeCalled();
+
+      expect(response).toEqual(expectedResponse);
+    });
+
+    test('When there is no training event for toyo persona then return undefined', async () => {
+      const toyoPersonaId = '1';
+      const trainingEventId = '1';
+
+      const parseQueryConstructor = jest.mocked(Parse.Query);
+
+      const mockToyoPersonaTrainingEventParseQuery = {
+        equalTo: jest.fn(),
+        first: jest.fn(),
+      };
+
+      parseQueryConstructor.mockReturnValue(
+        mockToyoPersonaTrainingEventParseQuery as any,
+      );
+
+      mockToyoPersonaTrainingEventParseQuery.first.mockResolvedValue(undefined);
+
+      const response = await repository.getByTrainingEventAndToyoPersona(
+        toyoPersonaId,
+        trainingEventId,
+      );
+
+      expect(response).toEqual(undefined);
+    });
+  });
 });

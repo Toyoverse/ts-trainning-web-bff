@@ -2,9 +2,11 @@ import {
   ArgumentsHost,
   BadRequestException,
   Catch,
+  ConsoleLogger,
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ClassConstructor } from 'class-transformer';
@@ -23,6 +25,8 @@ const errorsHttpExceptions = new Map<string, ClassConstructor<any>>([
 
 @Catch(Error)
 export class ApiHttpErrorFilter implements ExceptionFilter {
+  logger = new Logger('ExceptionsHandler');
+
   catch(err: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -37,7 +41,8 @@ export class ApiHttpErrorFilter implements ExceptionFilter {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Internal Server Error',
       });
-      return;
+      this.logger.error(err.message);
+      throw err;
     }
 
     const HttpExceptionClass = errorsHttpExceptions.get(err.name);

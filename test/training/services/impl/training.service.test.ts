@@ -1,7 +1,7 @@
 import 'reflect-metadata';
-import { TrainingStartDto } from '../../../../training/dto/start.dto';
-import { TrainingModel } from '../../../../training/models/training.model';
-import { TrainingServiceImpl } from '../training.service-impl';
+import { TrainingStartDto } from 'src/training/dto/start.dto';
+import { TrainingModel } from 'src/training/models/training.model';
+import { TrainingServiceImpl } from 'src/training/services/impl/training.service-impl';
 
 describe('Training service tests', () => {
   const trainingRepository = {

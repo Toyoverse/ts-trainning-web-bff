@@ -1,6 +1,6 @@
-import { TrainingStartDto } from '../../../../training/dto/start.dto';
-import { TrainingModel } from '../../../../training/models/training.model';
-import { TrainingRepositoryImpl } from '../training.repository-impl';
+import { TrainingStartDto } from 'src/training/dto/start.dto';
+import { TrainingModel } from 'src/training/models/training.model';
+import { TrainingRepositoryImpl } from 'src/training/repositories/impl/training.repository-impl';
 
 const mockParseObject = {
   get: jest.fn(),

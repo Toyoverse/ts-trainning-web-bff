@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { TrainingController } from '../training.controller';
-import { TrainingStartDto } from '../../dto/start.dto';
+import { TrainingController } from 'src/training/controllers/training.controller';
+import { TrainingStartDto } from 'src/training/dto/start.dto';
 
 describe('Training controller tests', () => {
   const trainingService = {

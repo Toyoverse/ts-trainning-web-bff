@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -31,7 +30,7 @@ export class TrainingServiceImpl implements TrainingService {
     const model = await this.trainingRepository.close(id);
 
     if (!model) {
-      throw new BadRequestException('Training not found');
+      throw new InternalServerErrorException('An error occurred');
     }
 
     return model;

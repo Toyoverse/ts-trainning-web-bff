@@ -6,12 +6,22 @@ import {
   Put,
   Get,
   Param,
+  HttpStatus,
 } from '@nestjs/common';
+import {
+  ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CreateResponse, ErrorResponse } from 'src/utils/http/responses';
 import di from '../di';
 import { TrainingStartDto } from '../dto/start.dto';
 import { TrainingModel } from '../models/training.model';
 import { TrainingService } from '../services/training.service';
 
+@ApiTags('training')
 @Controller('/training')
 export class TrainingController {
   constructor(
@@ -19,18 +29,58 @@ export class TrainingController {
     private trainingService: TrainingService,
   ) {}
 
+  @ApiCreatedResponse({
+    description: 'Training successfully started',
+    type: () => CreateResponse,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'An error occurred',
+    type: () => ErrorResponse,
+  })
   @Post()
-  start(@Body() body: TrainingStartDto): Promise<TrainingModel> {
-    return this.trainingService.start(body);
+  async start(@Body() body: TrainingStartDto): Promise<CreateResponse> {
+    const model = await this.trainingService.start(body);
+
+    return new CreateResponse({
+      statusCode: HttpStatus.CREATED,
+      message: 'Training successfully started',
+      body: model,
+    });
   }
 
+  @ApiQuery({ name: 'id', description: 'Training id' })
+  @ApiOkResponse({
+    description: 'Training successfully finished',
+    type: () => CreateResponse,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'An error occurred',
+    type: () => ErrorResponse,
+  })
   @Put('/:id')
-  close(@Param('id') id: string): Promise<TrainingModel> {
-    return this.trainingService.close(id);
+  async close(@Param('id') id: string): Promise<CreateResponse> {
+    const model = await this.trainingService.close(id);
+
+    return new CreateResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Training successfully finished',
+      body: model,
+    });
   }
 
+  @ApiQuery({ name: 'playerId', description: 'Player id' })
+  @ApiOkResponse({
+    description: 'Successfully retrieved player active trainings',
+    type: () => CreateResponse,
+  })
   @Get('/:playerId')
-  list(@Param('playerId') playerId: string): Promise<TrainingModel[]> {
-    return this.trainingService.list(playerId);
+  async list(@Param('playerId') playerId: string): Promise<CreateResponse> {
+    const trainings = await this.trainingService.list(playerId);
+
+    return new CreateResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Successfully retrieved player active trainings',
+      body: trainings,
+    });
   }
 }

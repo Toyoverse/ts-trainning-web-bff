@@ -155,9 +155,13 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
   async list(playerId: string): Promise<TrainingModel[]> {
     try {
+      const playerQuery = new Parse.Query('Players');
+      playerQuery.equalTo('objectId', playerId);
+      const player = await playerQuery.find();
+
       const query = new Parse.Query(this.DATABASE_CLASS);
       query.equalTo('claimedAt', undefined);
-
+      query.equalTo('player', player[0]);
       const trainingList = await query.find();
 
       const formattedArray = trainingList.map((e) => {

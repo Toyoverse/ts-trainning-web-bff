@@ -27,6 +27,8 @@ describe('Toyo persona training events controller tests', () => {
         cardReward: new CardTrainingRewardCreateDto({
           name: 'Card Reward',
           description: 'Lorem ipsum dolor sit amet.',
+          imageUrl: 'https://www.images.com/card1.jpeg',
+          imageDescription: 'Lorem ipsum dolor sit amet 2.',
           cardId: '1',
           rotText: 'Lorem ipsum dolor sit amet.',
           type: '1',

@@ -12,10 +12,15 @@ import { TrainingBlowService } from 'src/training-blow/services/training-blow.se
 import { ToyoPersonaTrainingEventRepository } from 'src/training-event/repositories/toyo-persona-training-event.repository';
 
 import { ToyoPersonaTrainingEventService } from '../toyo-persona-training-event.service';
-import { ToyoPersonaTrainingEventCreateDto } from 'src/training-event/dto/toyo-persona-training-event/create.dto';
+import {
+  CardTrainingRewardCreateDto,
+  ToyoPersonaTrainingEventCreateDto,
+} from 'src/training-event/dto/toyo-persona-training-event/create.dto';
 import { ToyoPersonaTrainingEventModel } from 'src/training-event/models/toyo-persona-training-event.model';
+import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 import { TrainingEventService } from '../training-event.service';
+import { CardTrainingRewardService } from '../card-training-reward.service';
 
 @Injectable()
 export class ToyoPersonaTrainingEventServiceImpl
@@ -30,15 +35,23 @@ export class ToyoPersonaTrainingEventServiceImpl
     private _blowsService: TrainingBlowService,
     @Inject(toyoDi.TOYO_PERSONA_SERVICE)
     private _toyoPersonaService: ToyoPersonaService,
+    @Inject(di.CARD_TRAINING_REWARD_SERVICE)
+    private _cardTrainingRewardService: CardTrainingRewardService,
   ) {}
 
   async create(createDto: ToyoPersonaTrainingEventCreateDto): Promise<UUID> {
     await this._checkPersona(createDto.toyoPersonaId);
     await this._checkBlowsIds(createDto.correctBlowsCombinationIds);
 
-    const model = new ToyoPersonaTrainingEventModel(createDto);
+    const model = new ToyoPersonaTrainingEventModel({
+      ...createDto,
+      cardReward: new CardTrainingRewardModel({ ...createDto.cardReward }),
+    });
 
-    const { id } = await this._repository.save(model);
+    const { id, cardReward } = await this._repository.save(model);
+
+    await this._createCardMetadata(cardReward);
+
     return id;
   }
 
@@ -63,6 +76,10 @@ export class ToyoPersonaTrainingEventServiceImpl
         throw new ConstraintViolationError(error.message);
       throw error;
     }
+  }
+
+  private _createCardMetadata(cardReward: CardTrainingRewardModel) {
+    return this._cardTrainingRewardService.createMetadata(cardReward);
   }
 
   async getCurrent(

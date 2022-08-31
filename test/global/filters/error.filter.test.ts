@@ -50,8 +50,9 @@ describe('Error Filter Tests', () => {
       switchToHttp: () => ctx,
     };
 
-    filter.catch(error, host as any);
+    const t = () => filter.catch(error, host as any);
 
+    expect(t).toThrow(error);
     expect(mockResponse.status).toBeCalledWith(
       HttpStatus.INTERNAL_SERVER_ERROR,
     );

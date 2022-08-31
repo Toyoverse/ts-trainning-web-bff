@@ -2,6 +2,8 @@ export class CardTrainingRewardModel {
   id?: string;
   name: string;
   description: string;
+  imageUrl: string;
+  imageDescription: string;
   rotText: string;
   type: string;
   cardId: string;
@@ -10,6 +12,8 @@ export class CardTrainingRewardModel {
     id?: string;
     name: string;
     description: string;
+    imageUrl: string;
+    imageDescription: string;
     rotText: string;
     type: string;
     cardId: string;
@@ -18,9 +22,22 @@ export class CardTrainingRewardModel {
       this.id = attrs.id;
       this.name = attrs.name;
       this.description = attrs.description;
+      this.imageUrl = attrs.imageUrl;
+      this.imageDescription = attrs.imageDescription;
       this.rotText = attrs.rotText;
       this.type = attrs.type;
       this.cardId = attrs.cardId;
     }
+  }
+
+  getMetadata() {
+    return {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      rotText: this.rotText,
+      imageUrl: this.imageUrl,
+      imageDescription: this.imageDescription,
+    };
   }
 }

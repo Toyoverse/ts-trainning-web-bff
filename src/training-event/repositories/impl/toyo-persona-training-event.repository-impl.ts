@@ -26,6 +26,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
     );
 
     await cardParseObject.save();
+    model.cardReward.id = cardParseObject.id;
 
     const toyoPersonaTrainingEventParseObject =
       this._buildToyoPersonaTrainingEventParseObject(
@@ -37,6 +38,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
     await toyoPersonaTrainingEventParseObject.save();
 
     model.id = toyoPersonaTrainingEventParseObject.id;
+
     return model;
   }
 
@@ -49,6 +51,8 @@ export class ToyoPersonaTrainingEventRepositoryImpl
 
     cardRewardParseObject.set('name', cardModel.name);
     cardRewardParseObject.set('description', cardModel.description);
+    cardRewardParseObject.set('imageUrl', cardModel.imageUrl);
+    cardRewardParseObject.set('imageDescription', cardModel.imageDescription);
     cardRewardParseObject.set('rotText', cardModel.rotText);
     cardRewardParseObject.set('type', cardModel.type);
     cardRewardParseObject.set('cardId', cardModel.cardId);
@@ -123,9 +127,11 @@ export class ToyoPersonaTrainingEventRepositoryImpl
       ),
       cardReward: new CardTrainingRewardModel({
         id: cardRewardParseObject.id,
-        cardId: cardRewardParseObject.get('cardId'),
-        description: cardRewardParseObject.get('description'),
         name: cardRewardParseObject.get('name'),
+        description: cardRewardParseObject.get('description'),
+        imageUrl: cardRewardParseObject.get('imageUrl'),
+        imageDescription: cardRewardParseObject.get('imageDescription'),
+        cardId: cardRewardParseObject.get('cardId'),
         rotText: cardRewardParseObject.get('rotText'),
         type: cardRewardParseObject.get('type'),
       }),

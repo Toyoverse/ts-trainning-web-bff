@@ -13,6 +13,10 @@ export class CardTrainingRewardCreateDto {
   description: string;
 
   @ApiProperty()
+  @IsString()
+  imageDescription: string;
+
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   rotText: string;
@@ -27,12 +31,19 @@ export class CardTrainingRewardCreateDto {
   @IsString()
   cardId: string;
 
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  imageUrl: string;
+
   constructor(attrs?: {
     name: string;
     description: string;
+    imageDescription: string;
     rotText: string;
     type: string;
     cardId: string;
+    imageUrl: string;
   }) {
     if (attrs) {
       Object.assign(this, attrs);

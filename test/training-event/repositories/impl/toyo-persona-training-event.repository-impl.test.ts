@@ -19,6 +19,8 @@ describe('Toyo persona training event repository tests', () => {
         cardReward: new CardTrainingRewardModel({
           name: 'Card Reward',
           description: 'Lorem ipsum dolor sit amet.',
+          imageUrl: 'https://www.images.com/card.jpeg',
+          imageDescription: 'Lorem ipsum dolor sit amet.',
           cardId: '1',
           rotText: 'Lorem ipsum dolor sit amet.',
           type: '1',
@@ -105,6 +107,14 @@ describe('Toyo persona training event repository tests', () => {
         'description',
         input.cardReward.description,
       );
+      expect(mockCardRewardParseObject.set).toBeCalledWith(
+        'imageUrl',
+        input.cardReward.imageUrl,
+      );
+      expect(mockCardRewardParseObject.set).toBeCalledWith(
+        'imageDescription',
+        input.cardReward.imageDescription,
+      );
 
       expect(mockCardRewardParseObject.set).toBeCalledWith(
         'rotText',
@@ -177,6 +187,8 @@ describe('Toyo persona training event repository tests', () => {
           cardId: '1',
           description:
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et.',
+          imageUrl: 'https://www.images.com/card.jpeg',
+          imageDescription: 'Lorem ipsum dolor sit amet.',
           rotText:
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et.',
           type: '1',
@@ -235,6 +247,14 @@ describe('Toyo persona training event repository tests', () => {
       when(mockCardRewardParseObject.get)
         .calledWith('description')
         .mockReturnValue(expectedResponse.cardReward.description);
+
+      when(mockCardRewardParseObject.get)
+        .calledWith('imageUrl')
+        .mockReturnValue(expectedResponse.cardReward.imageUrl);
+
+      when(mockCardRewardParseObject.get)
+        .calledWith('imageDescription')
+        .mockReturnValue(expectedResponse.cardReward.imageDescription);
 
       when(mockCardRewardParseObject.get)
         .calledWith('type')

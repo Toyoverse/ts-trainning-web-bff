@@ -29,11 +29,16 @@ describe('Toyo persona training event service impl tests', () => {
     getById: jest.fn(),
   };
 
+  const mockCardTrainingRewardService = {
+    createMetadata: jest.fn(),
+  };
+
   const service = new ToyoPersonaTrainingEventServiceImpl(
     mockRepository as any,
     mockTrainingEventService as any,
     mockBlowsService as any,
-    mockToyoPersonaService,
+    mockToyoPersonaService as any,
+    mockCardTrainingRewardService as any,
   );
 
   describe('Create toyo persona training event', () => {
@@ -45,9 +50,11 @@ describe('Toyo persona training event service impl tests', () => {
         cardReward: new CardTrainingRewardCreateDto({
           name: 'Card Reward',
           description: 'Lorem ipsum dolor sit amet.',
+          imageDescription: 'Lorem ipsum dolor sit amet.',
           cardId: '1',
           rotText: 'Lorem ipsum dolor sit amet.',
           type: '1',
+          imageUrl: 'https://www.images.com/card1',
         }),
       });
 
@@ -64,13 +71,28 @@ describe('Toyo persona training event service impl tests', () => {
       const mockId = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
       const repositoryResponse = new ToyoPersonaTrainingEventModel({
         id: mockId,
-        ...input,
+        trainingEventId: input.trainingEventId,
+        toyoPersonaId: input.toyoPersonaId,
+        correctBlowsCombinationIds: input.correctBlowsCombinationIds,
+        cardReward: new CardTrainingRewardModel({
+          id: mockId,
+          name: input.cardReward.name,
+          description: input.cardReward.description,
+          imageUrl: 'https://www.images.com/card.jpeg',
+          imageDescription: 'Lorem ipsum dolor sit amet.',
+          rotText: input.cardReward.rotText,
+          type: input.cardReward.type,
+          cardId: input.cardReward.cardId,
+        }),
       });
 
       mockRepository.save.mockResolvedValue(repositoryResponse);
 
       const id = await service.create(input);
 
+      expect(mockCardTrainingRewardService.createMetadata).toBeCalledWith(
+        repositoryResponse.cardReward,
+      );
       expect(mockRepository.save).toBeCalledWith({ ...input });
       expect(id).toBe(mockId);
     });
@@ -147,6 +169,8 @@ describe('Toyo persona training event service impl tests', () => {
           cardId: '1',
           description: '1',
           name: 'Tatsu training event card',
+          imageUrl: 'https://www.images.com/card.jpeg',
+          imageDescription: 'Lorem ipsum dolor sit amet.',
           rotText: 'Lorem impsum',
           type: '1',
         }),

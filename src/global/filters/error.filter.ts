@@ -37,7 +37,7 @@ export class ApiHttpErrorFilter implements ExceptionFilter {
     }
 
     if (!errorsHttpExceptions.has(err.name)) {
-      response.status(500).json({
+      response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Internal Server Error',
       });

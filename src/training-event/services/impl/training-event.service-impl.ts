@@ -44,6 +44,7 @@ export class TrainingEventServiceImpl implements TrainingEventService {
         if (error instanceof NotFoundError) {
           throw new ConstraintViolationError(error.message);
         }
+        throw error;
       }
     }
   }

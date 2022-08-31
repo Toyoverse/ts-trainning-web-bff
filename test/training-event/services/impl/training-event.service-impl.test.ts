@@ -95,6 +95,20 @@ describe('Training event service tests', () => {
       const t = async () => await trainingEventService.create(dto);
       await expect(t).rejects.toThrow(ConstraintViolationError);
     });
+
+    test('When fail to get blows and error is unexpected then re-throw error', async () => {
+      const dto = new TrainingEventCreateDto({
+        blows: ['1', '2', '3'],
+      } as any);
+
+      const unexpectedError = new Error();
+      when(trainingBlowService.getById)
+        .calledWith('2')
+        .mockRejectedValue(unexpectedError);
+
+      const t = async () => await trainingEventService.create(dto);
+      await expect(t).rejects.toThrow(unexpectedError);
+    });
   });
 
   describe('Get current training event', () => {

@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import * as back4app from './config/back4app';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { ApiHttpErrorFilter } from './filters/error.filter';
+import { ApiHttpErrorFilter } from './global/filters/error.filter';
 
 async function bootstrap() {
   back4app.config();

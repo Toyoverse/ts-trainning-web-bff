@@ -8,7 +8,7 @@ import {
   Post,
   UseFilters,
 } from '@nestjs/common';
-import { ApiHttpErrorFilter } from 'src/filters/error.filter';
+import { ApiHttpErrorFilter } from 'src/global/filters/error.filter';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,

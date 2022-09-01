@@ -52,7 +52,6 @@ export class ToyoPersonaTrainingEventRepositoryImpl
     cardRewardParseObject.set('name', cardModel.name);
     cardRewardParseObject.set('description', cardModel.description);
     cardRewardParseObject.set('imageUrl', cardModel.imageUrl);
-    cardRewardParseObject.set('imageDescription', cardModel.imageDescription);
     cardRewardParseObject.set('rotText', cardModel.rotText);
     cardRewardParseObject.set('type', cardModel.type);
     cardRewardParseObject.set('cardId', cardModel.cardId);
@@ -130,7 +129,6 @@ export class ToyoPersonaTrainingEventRepositoryImpl
         name: cardRewardParseObject.get('name'),
         description: cardRewardParseObject.get('description'),
         imageUrl: cardRewardParseObject.get('imageUrl'),
-        imageDescription: cardRewardParseObject.get('imageDescription'),
         cardId: cardRewardParseObject.get('cardId'),
         rotText: cardRewardParseObject.get('rotText'),
         type: cardRewardParseObject.get('type'),

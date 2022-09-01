@@ -13,10 +13,6 @@ export class CardTrainingRewardCreateDto {
   description: string;
 
   @ApiProperty()
-  @IsString()
-  imageDescription: string;
-
-  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   rotText: string;
@@ -39,7 +35,6 @@ export class CardTrainingRewardCreateDto {
   constructor(attrs?: {
     name: string;
     description: string;
-    imageDescription: string;
     rotText: string;
     type: string;
     cardId: string;

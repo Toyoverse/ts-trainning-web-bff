@@ -16,7 +16,6 @@ describe('Card training reward service tests', () => {
         name: 'Card Reward',
         description: 'Lorem ipsum dolor sit amet.',
         imageUrl: 'https://www.images.com/card.jpeg',
-        imageDescription: 'Lorem ipsum dolor sit amet.',
         cardId: '1',
         rotText: 'Lorem ipsum dolor sit amet.',
         type: '1',

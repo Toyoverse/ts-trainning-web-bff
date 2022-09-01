@@ -50,7 +50,6 @@ describe('Toyo persona training event service impl tests', () => {
         cardReward: new CardTrainingRewardCreateDto({
           name: 'Card Reward',
           description: 'Lorem ipsum dolor sit amet.',
-          imageDescription: 'Lorem ipsum dolor sit amet.',
           cardId: '1',
           rotText: 'Lorem ipsum dolor sit amet.',
           type: '1',
@@ -79,7 +78,6 @@ describe('Toyo persona training event service impl tests', () => {
           name: input.cardReward.name,
           description: input.cardReward.description,
           imageUrl: 'https://www.images.com/card.jpeg',
-          imageDescription: 'Lorem ipsum dolor sit amet.',
           rotText: input.cardReward.rotText,
           type: input.cardReward.type,
           cardId: input.cardReward.cardId,
@@ -170,7 +168,6 @@ describe('Toyo persona training event service impl tests', () => {
           description: '1',
           name: 'Tatsu training event card',
           imageUrl: 'https://www.images.com/card.jpeg',
-          imageDescription: 'Lorem ipsum dolor sit amet.',
           rotText: 'Lorem impsum',
           type: '1',
         }),

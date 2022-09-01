@@ -3,7 +3,6 @@ export class CardTrainingRewardModel {
   name: string;
   description: string;
   imageUrl: string;
-  imageDescription: string;
   rotText: string;
   type: string;
   cardId: string;
@@ -13,7 +12,6 @@ export class CardTrainingRewardModel {
     name: string;
     description: string;
     imageUrl: string;
-    imageDescription: string;
     rotText: string;
     type: string;
     cardId: string;
@@ -23,7 +21,6 @@ export class CardTrainingRewardModel {
       this.name = attrs.name;
       this.description = attrs.description;
       this.imageUrl = attrs.imageUrl;
-      this.imageDescription = attrs.imageDescription;
       this.rotText = attrs.rotText;
       this.type = attrs.type;
       this.cardId = attrs.cardId;
@@ -37,7 +34,6 @@ export class CardTrainingRewardModel {
       description: this.description,
       rotText: this.rotText,
       imageUrl: this.imageUrl,
-      imageDescription: this.imageDescription,
     };
   }
 }

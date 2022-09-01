@@ -9,16 +9,20 @@ import { TrainingStartDto } from '../../../training/dto/start.dto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
 
+interface BlowsConfigOptions {
+  qty: number;
+  duration: number;
+}
+
 export class TrainingRepositoryImpl implements TrainingRepository {
   private readonly DATABASE_CLASS = 'ToyoTraining';
-  private readonly TRAINING_DURATION_IN_HOURS = 8;
 
   async start(dto: TrainingStartDto): Promise<TrainingModel> {
     const training = new Parse.Object(this.DATABASE_CLASS);
 
     try {
       const toyoQuery = new Parse.Query('Toyo');
-      toyoQuery.equalTo('objectId', dto.toyoId);
+      toyoQuery.equalTo('tokenId', dto.toyoTokenId);
       const toyo = await toyoQuery.find();
 
       if (toyo.length < 1) {
@@ -50,10 +54,20 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         return null;
       }
 
-      const now = new Date();
-      const endAt = new Date(
-        Date.now() + this.TRAINING_DURATION_IN_HOURS * (60 * 60 * 1000),
+      const blowsConfigList: BlowsConfigOptions[] =
+        trainingEvent[0].get('blowsConfig');
+
+      const config = blowsConfigList.find(
+        (i) => i.qty === dto.combination.length,
       );
+
+      if (!config) {
+        return null;
+      }
+
+      const trainingDuration = config.duration / 60;
+      const now = new Date();
+      const endAt = new Date(Date.now() + trainingDuration * (60 * 60 * 1000));
 
       training.set('toyo', toyo[0]);
       training.set('player', player[0]);

@@ -18,7 +18,7 @@ interface TokenPayload {
 }
 
 @Injectable()
-export class CurrentUserInterceptor implements NestInterceptor {
+export class CurrentPlayerInterceptor implements NestInterceptor {
   constructor(
     @Inject(di.PLAYER_SERVICE)
     private playerService: PlayerService,
@@ -28,7 +28,6 @@ export class CurrentUserInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler<any>,
   ): Promise<Observable<any>> {
-    const response = context.switchToHttp().getResponse();
     const request = context.switchToHttp().getRequest();
 
     const token = request.headers.authorization.split(' ')[1];
@@ -46,9 +45,8 @@ export class CurrentUserInterceptor implements NestInterceptor {
     }
 
     const player = await this.playerService.getPlayerByWalletId(walletId);
-    console.log('Player', player);
 
-    response.locals.playerId = player.id;
+    request.player = player;
 
     return next.handle();
   }

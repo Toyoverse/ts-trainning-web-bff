@@ -29,7 +29,6 @@ export class CardTrainingRewardModel {
 
   getMetadata() {
     return {
-      id: this.id,
       name: this.name,
       description: this.description,
       rotText: this.rotText,

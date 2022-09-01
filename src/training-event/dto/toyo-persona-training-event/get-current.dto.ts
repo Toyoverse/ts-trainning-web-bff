@@ -11,6 +11,9 @@ export class CardTrainingRewardGetCurrentDto {
   description: string;
 
   @ApiProperty()
+  imageUrl: string;
+
+  @ApiProperty()
   rotText: string;
 
   @ApiProperty()
@@ -23,6 +26,7 @@ export class CardTrainingRewardGetCurrentDto {
     id: string;
     name: string;
     description: string;
+    imageUrl: string;
     rotText: string;
     type: string;
     cardId: string;
@@ -31,6 +35,7 @@ export class CardTrainingRewardGetCurrentDto {
       this.id = attrs.id;
       this.name = attrs.name;
       this.description = attrs.description;
+      this.imageUrl = attrs.imageUrl;
       this.rotText = attrs.rotText;
       this.type = attrs.type;
       this.cardId = attrs.cardId;

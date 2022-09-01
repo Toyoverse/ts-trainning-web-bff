@@ -55,6 +55,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
     cardRewardParseObject.set('rotText', cardModel.rotText);
     cardRewardParseObject.set('type', cardModel.type);
     cardRewardParseObject.set('cardId', cardModel.cardId);
+    cardRewardParseObject.set('nftMetadata', cardModel.getMetadata());
 
     return cardRewardParseObject;
   }
@@ -94,8 +95,9 @@ export class ToyoPersonaTrainingEventRepositoryImpl
       id: trainingEventId,
     });
     parseQuery.equalTo('trainingEvent', trainingEventParseObject);
-
     parseQuery.equalTo('toyoPersona', toyoPersonaId);
+
+    parseQuery.include('cardReward');
 
     const toyoPersonaTrainingEventParseObject = await parseQuery.first();
 
@@ -113,8 +115,6 @@ export class ToyoPersonaTrainingEventRepositoryImpl
   ): Promise<ToyoPersonaTrainingEventModel> {
     const cardRewardParseObject: Parse.Object<Parse.Attributes> =
       toyoPersonaTrainingEventParseObject.get('cardReward');
-
-    await cardRewardParseObject.fetch();
 
     return new ToyoPersonaTrainingEventModel({
       id: toyoPersonaTrainingEventParseObject.id,

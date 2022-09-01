@@ -21,16 +21,12 @@ export class TrainingEventServiceImpl implements TrainingEventService {
   ) {}
 
   async create(dto: TrainingEventCreateDto): Promise<UUID> {
-    try {
-      const body: TrainingEventCreateDto = dto;
-      let model = new TrainingEventModel(body);
-      await this._checkBlows(model);
+    const body: TrainingEventCreateDto = dto;
+    let model = new TrainingEventModel(body);
+    await this._checkBlows(model);
 
-      model = await this._repository.save(model);
-      return model.id;
-    } catch (er) {
-      console.log(er);
-    }
+    model = await this._repository.save(model);
+    return model.id;
   }
 
   private async _checkBlows(model: TrainingEventModel) {

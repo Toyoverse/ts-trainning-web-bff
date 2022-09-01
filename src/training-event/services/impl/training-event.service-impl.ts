@@ -5,10 +5,7 @@ import trainingBlowDi from 'src/training-blow/di';
 import { TrainingEventModel } from 'src/training-event/models/training-event.model';
 import { TrainingEventRepository } from 'src/training-event/repositories/training-event.repository';
 import { TrainingEventService } from '../training-event.service';
-import {
-  TrainingEventConfigDto,
-  TrainingEventCreateDto,
-} from '../../dto/training-event/create.dto';
+import { TrainingEventCreateDto } from '../../dto/training-event/create.dto';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 import { TrainingBlowService } from 'src/training-blow/services/training-blow.service';
@@ -23,9 +20,9 @@ export class TrainingEventServiceImpl implements TrainingEventService {
     private _trainingBlowService: TrainingBlowService,
   ) {}
 
-  async create(dto: TrainingEventConfigDto): Promise<UUID> {
+  async create(dto: TrainingEventCreateDto): Promise<UUID> {
     try {
-      const body: TrainingEventCreateDto = dto.eventConfig;
+      const body: TrainingEventCreateDto = dto;
       let model = new TrainingEventModel(body);
       await this._checkBlows(model);
 

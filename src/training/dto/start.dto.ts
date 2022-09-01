@@ -7,9 +7,6 @@ export class TrainingStartDto {
   @IsString()
   trainingId: string;
 
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
   playerId: string;
 
   @ApiProperty()

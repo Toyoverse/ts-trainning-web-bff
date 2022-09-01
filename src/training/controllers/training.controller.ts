@@ -39,8 +39,14 @@ export class TrainingController {
     description: 'An error occurred',
     type: () => ErrorResponse,
   })
+  @UseInterceptors(CurrentPlayerInterceptor)
   @Post()
-  async start(@Body() body: TrainingStartDto): Promise<CreateResponse> {
+  async start(
+    @Req() req: any,
+    @Body() body: TrainingStartDto,
+  ): Promise<CreateResponse> {
+    body.playerId = req.player.id;
+
     const model = await this.trainingService.start(body);
 
     return new CreateResponse({

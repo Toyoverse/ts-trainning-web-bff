@@ -21,8 +21,6 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       toyoQuery.equalTo('objectId', dto.toyoId);
       const toyo = await toyoQuery.find();
 
-      console.log('Toyo', toyo);
-
       if (toyo.length < 1) {
         return null;
       }
@@ -114,6 +112,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       toyoPersonaTrainingEvent.equalTo('trainingEvent', resultEvent[0]);
       const card = await toyoPersonaTrainingEvent.find();
 
+      if (card.length === 0) {
+        return null;
+      }
+
       const bondReward = resultEvent[0].get('bondReward');
 
       let signature: string;
@@ -178,11 +180,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     object: Parse.Object<Parse.Attributes>,
   ): TrainingModel {
     return new TrainingModel({
-      toyo: object.get('toyo'),
+      id: object.id,
       startAt: object.get('startAt'),
       endAt: object.get('endAt'),
       claimedAt: object.get('claimedAt'),
-      training: object.get('trainingEvent'),
       signature: object.get('signature'),
       combination: object.get('combination'),
     });

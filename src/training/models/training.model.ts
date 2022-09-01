@@ -1,6 +1,5 @@
 export class TrainingModel {
-  training: string;
-  toyo: string;
+  id?: string;
   startAt: Date;
   endAt: Date;
   claimedAt: Date;
@@ -8,16 +7,14 @@ export class TrainingModel {
   combination: string[];
 
   constructor(attrs: {
-    training: string;
-    toyo: string;
+    id?: string;
     startAt: Date;
     endAt: Date;
     claimedAt: Date;
     signature: string;
     combination: string[];
   }) {
-    this.training = attrs.training;
-    this.toyo = attrs.toyo;
+    this.id = attrs.id;
     this.startAt = attrs.startAt;
     this.endAt = attrs.endAt;
     this.claimedAt = attrs.claimedAt;

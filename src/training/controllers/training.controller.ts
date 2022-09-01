@@ -18,7 +18,6 @@ import {
 import { CreateResponse, ErrorResponse } from 'src/utils/http/responses';
 import di from '../di';
 import { TrainingStartDto } from '../dto/start.dto';
-import { TrainingModel } from '../models/training.model';
 import { TrainingService } from '../services/training.service';
 
 @ApiTags('training')

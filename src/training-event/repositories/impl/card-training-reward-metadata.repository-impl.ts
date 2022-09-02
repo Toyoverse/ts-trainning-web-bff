@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as CryptoJS from 'crypto-js';
 import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
 import { CardTrainingRewardMetadataRepository } from '../card-training-reward-metadata.repository';
 
@@ -16,7 +17,8 @@ export class CardTrainingRewardMetadataRepositoryImpl
       fs.mkdirSync(this.CARDS_META_DIRECTORY, { recursive: true });
     }
 
-    const fileName = `${card.id}.json`;
+    const fileName = CryptoJS.MD5(card.id).toString() + '.json';
+
     const filePath = path.join(this.CARDS_META_DIRECTORY, fileName);
     const jsonMetadata = JSON.stringify(card.getMetadata());
 

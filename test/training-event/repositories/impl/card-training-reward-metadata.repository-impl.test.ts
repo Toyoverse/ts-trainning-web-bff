@@ -1,6 +1,8 @@
-import { CardTrainingRewardMetadataRepositoryImpl } from 'src/training-event/repositories/impl/card-training-reward-metadata.repository-impl';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as CryptoJS from 'crypto-js';
+
+import { CardTrainingRewardMetadataRepositoryImpl } from 'src/training-event/repositories/impl/card-training-reward-metadata.repository-impl';
 import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
 
 jest.mock('fs');
@@ -24,12 +26,20 @@ describe('Card training reward metadata repository tests', () => {
 
       const jsonMetadata = JSON.stringify(card.getMetadata());
 
+      const fileName = 'd41d8cd98f00b204e900998ecf8427e';
+
+      jest.spyOn(CryptoJS, 'MD5').mockImplementation(() => {
+        return {
+          toString: () => fileName,
+        } as any;
+      });
+
       const mockFs = jest.mocked(fs);
       mockFs.existsSync.mockReturnValue(true);
 
       await repository.save(card);
 
-      const filePath = path.join(cardsMetaDirectory, card.id + '.json');
+      const filePath = path.join(cardsMetaDirectory, fileName + '.json');
 
       expect(mockFs.writeFileSync).toBeCalledWith(
         filePath,

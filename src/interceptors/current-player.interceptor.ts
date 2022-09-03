@@ -30,7 +30,7 @@ export class CurrentPlayerInterceptor implements NestInterceptor {
   ): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
 
-    const token = request.headers.authorization.split(' ')[1];
+    const token = request.headers.authorization;
 
     if (!token) {
       throw new Error('Ocorreu um erro ao verificar o player');

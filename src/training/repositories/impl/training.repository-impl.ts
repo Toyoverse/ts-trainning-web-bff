@@ -9,6 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TrainingStartDto } from '../../../training/dto/start.dto';
+import { compareArrays } from 'src/utils/general';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
@@ -142,8 +143,18 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       const bondReward = resultEvent[0].get('bondReward');
 
+      const selectedCombination: string[] = training[0].get('combination');
+      const correctCombination: string[] = card[0].get(
+        'correctBlowsCombination',
+      );
+
+      const isCombinationCorrect = compareArrays(
+        selectedCombination,
+        correctCombination,
+      );
+
       let signature: string;
-      if (toyoWinner.length > 0) {
+      if (toyoWinner.length > 0 || !isCombinationCorrect) {
         signature = this.generateTrainingSignature(toyoId, bondReward, '');
       } else {
         signature = this.generateTrainingSignature(

@@ -53,9 +53,6 @@ export class ToyoPersonaTrainingEventGetCurrentDto {
   @ApiProperty()
   toyoPersonaId: string;
 
-  @ApiProperty()
-  correctBlowsCombinationIds: string[];
-
   @ApiProperty({ type: () => CardTrainingRewardGetCurrentDto })
   cardReward: CardTrainingRewardGetCurrentDto;
 
@@ -63,14 +60,12 @@ export class ToyoPersonaTrainingEventGetCurrentDto {
     id: string;
     trainingEventId: string;
     toyoPersonaId: string;
-    correctBlowsCombinationIds: string[];
     cardReward: CardTrainingRewardGetCurrentDto;
   }) {
     if (attrs) {
       this.id = attrs.id;
       this.trainingEventId = attrs.trainingEventId;
       this.toyoPersonaId = attrs.toyoPersonaId;
-      this.correctBlowsCombinationIds = attrs.correctBlowsCombinationIds;
       this.cardReward = attrs.cardReward;
     }
   }

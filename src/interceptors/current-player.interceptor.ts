@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NestInterceptor,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { PlayerService } from 'src/external/player/services/player.service';
@@ -28,26 +29,30 @@ export class CurrentPlayerInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler<any>,
   ): Promise<Observable<any>> {
-    const request = context.switchToHttp().getRequest();
+    try {
+      const request = context.switchToHttp().getRequest();
 
-    const token = request.headers.authorization;
+      const token = request.headers.authorization.split(' ')[1];
 
-    if (!token) {
-      throw new Error('Ocorreu um erro ao verificar o player');
+      if (!token) {
+        throw new UnauthorizedException('Token invalid!');
+      }
+
+      const data = jwt.verify(token, process.env.TOKEN_SECRET);
+
+      const { walletId } = data as TokenPayload;
+
+      if (!walletId) {
+        throw new UnauthorizedException('Token invalid!');
+      }
+
+      const player = await this.playerService.getPlayerByWalletId(walletId);
+
+      request.player = player;
+
+      return next.handle();
+    } catch (e) {
+      throw new UnauthorizedException('Token invalid!');
     }
-
-    const data = jwt.verify(token, process.env.TOKEN_SECRET);
-
-    const { walletId } = data as TokenPayload;
-
-    if (!walletId) {
-      throw new Error('Ocorreu um erro ao verificar o player');
-    }
-
-    const player = await this.playerService.getPlayerByWalletId(walletId);
-
-    request.player = player;
-
-    return next.handle();
   }
 }

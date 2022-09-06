@@ -1,6 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import {
+  isNotEmpty,
+  IsNotEmpty,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
 export class CardTrainingRewardCreateDto {
   @ApiProperty()
@@ -58,10 +63,12 @@ export class ToyoPersonaTrainingEventCreateDto {
   toyoPersonaId: string;
 
   @ApiProperty()
+  @IsNotEmpty()
   @IsString({ each: true })
   correctBlowsCombinationIds: string[];
 
   @ApiProperty({ type: () => CardTrainingRewardCreateDto })
+  @IsNotEmpty()
   @ValidateNested()
   @Type(() => CardTrainingRewardCreateDto)
   cardReward: CardTrainingRewardCreateDto;

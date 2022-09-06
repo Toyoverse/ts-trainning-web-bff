@@ -126,6 +126,11 @@ describe('Toyo persona training event repository tests', () => {
         input.cardReward.cardId,
       );
 
+      expect(mockCardRewardParseObject.set).toBeCalledWith(
+        'nftMetadata',
+        input.cardReward.getMetadata(),
+      );
+
       expect(mockCardRewardParseObject.save).toBeCalled();
 
       expect(mockToyoPersonaTrainingEventParseObject.set).toBeCalledWith(
@@ -204,6 +209,7 @@ describe('Toyo persona training event repository tests', () => {
 
       const mockToyoPersonaTrainingEventParseQuery = {
         equalTo: jest.fn(),
+        include: jest.fn(),
         first: jest.fn(),
       };
 
@@ -215,7 +221,6 @@ describe('Toyo persona training event repository tests', () => {
       const mockCardRewardParseObject = {
         id: expectedResponse.cardReward.id,
         get: jest.fn(),
-        fetch: jest.fn(),
       };
 
       when(mockToyoPersonaTrainingEventParseObject.get)
@@ -280,8 +285,6 @@ describe('Toyo persona training event repository tests', () => {
         mockTrainingEventParseObject,
       );
 
-      expect(mockCardRewardParseObject.fetch).toBeCalled();
-
       expect(response).toEqual(expectedResponse);
     });
 
@@ -294,6 +297,7 @@ describe('Toyo persona training event repository tests', () => {
       const mockToyoPersonaTrainingEventParseQuery = {
         equalTo: jest.fn(),
         first: jest.fn(),
+        include: jest.fn(),
       };
 
       parseQueryConstructor.mockReturnValue(

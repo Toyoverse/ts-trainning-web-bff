@@ -56,7 +56,6 @@ describe('Toyo persona training events controller tests', () => {
         id: '1',
         trainingEventId: '1',
         toyoPersonaId,
-        correctBlowsCombinationIds: ['1', '3', '5', '8'],
         cardReward: new CardTrainingRewardGetCurrentDto({
           id: '1',
           name: 'Card Reward',

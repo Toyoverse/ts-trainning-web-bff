@@ -3,8 +3,13 @@ import { Eth } from 'web3-eth';
 import { soliditySha3 } from 'web3-utils';
 import { TrainingModel } from '../../../training/models/training.model';
 import { TrainingRepository } from '../training.repository';
-import { InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { TrainingStartDto } from '../../../training/dto/start.dto';
+import { compareArrays } from 'src/utils/general';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
@@ -26,7 +31,9 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       const toyo = await toyoQuery.find();
 
       if (toyo.length < 1) {
-        return null;
+        throw new NotFoundException(
+          'Toyo not found with the token id provided',
+        );
       }
 
       const trainingQuery = new Parse.Query(this.DATABASE_CLASS);
@@ -35,7 +42,9 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       const isToyoAlreadyTraining = await trainingQuery.find();
 
       if (isToyoAlreadyTraining.length > 0) {
-        return null;
+        throw new BadRequestException(
+          'You cannot start a training for a toyo that is already training',
+        );
       }
 
       const trainingEventQuery = new Parse.Query('TrainingEvent');
@@ -43,7 +52,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       const trainingEvent = await trainingEventQuery.find();
 
       if (trainingEvent.length < 1 || !trainingEvent[0].get('isOngoing')) {
-        return null;
+        throw new NotFoundException('Training event not found or not ongoing');
       }
 
       const playerQuery = new Parse.Query('Players');
@@ -62,7 +71,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       );
 
       if (!config) {
-        return null;
+        throw new NotFoundException('Could not find the training config info');
       }
 
       const trainingDuration = config.duration / 60;
@@ -94,7 +103,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       const training = await trainingQuery.find();
 
       if (training.length < 1 || training[0].get('claimedAt') !== undefined) {
-        return null;
+        throw new NotFoundException('Training not found or already claimed');
       }
 
       const trainingToyo = training[0].get('toyo').id;
@@ -127,13 +136,25 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       const card = await toyoPersonaTrainingEvent.find();
 
       if (card.length === 0) {
-        return null;
+        throw new InternalServerErrorException(
+          'A card for this event and persona was not found',
+        );
       }
 
       const bondReward = resultEvent[0].get('bondReward');
 
+      const selectedCombination: string[] = training[0].get('combination');
+      const correctCombination: string[] = card[0].get(
+        'correctBlowsCombination',
+      );
+
+      const isCombinationCorrect = compareArrays(
+        selectedCombination,
+        correctCombination,
+      );
+
       let signature: string;
-      if (toyoWinner.length > 0) {
+      if (toyoWinner.length > 0 || !isCombinationCorrect) {
         signature = this.generateTrainingSignature(toyoId, bondReward, '');
       } else {
         signature = this.generateTrainingSignature(
@@ -169,15 +190,12 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
-  async list(playerId: string): Promise<TrainingModel[]> {
+  async list(player: Parse.Object<Parse.Attributes>): Promise<TrainingModel[]> {
     try {
-      const playerQuery = new Parse.Query('Players');
-      playerQuery.equalTo('objectId', playerId);
-      const player = await playerQuery.find();
-
       const query = new Parse.Query(this.DATABASE_CLASS);
       query.equalTo('claimedAt', undefined);
-      query.equalTo('player', player[0]);
+      query.equalTo('player', player);
+      query.include('toyo');
       const trainingList = await query.find();
 
       const formattedArray = trainingList.map((e) => {
@@ -198,6 +216,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       startAt: object.get('startAt'),
       endAt: object.get('endAt'),
       claimedAt: object.get('claimedAt'),
+      toyoTokenId: object.get('toyo').get('tokenId'),
       signature: object.get('signature'),
       combination: object.get('combination'),
     });

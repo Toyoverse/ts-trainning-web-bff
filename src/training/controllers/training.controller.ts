@@ -9,10 +9,12 @@ import {
   HttpStatus,
   Req,
   UseInterceptors,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiQuery,
   ApiTags,

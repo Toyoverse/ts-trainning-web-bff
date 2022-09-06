@@ -11,9 +11,22 @@ export class PlayerServiceImpl implements PlayerService {
     const parseObject = await parseQuery.first();
 
     if (!parseObject) {
-      throw new NotFoundError('Player not found with wallet ' + walletId);
+      throw new NotFoundError(`Player not found with wallet ${walletId}`);
     }
 
     return { id: parseObject.id };
+  }
+
+  async getPlayerById(playerId: string): Promise<any> {
+    const parseQuery = new Parse.Query(classes.PLAYERS);
+    parseQuery.equalTo('objectId', playerId);
+
+    const player = await parseQuery.first();
+
+    if (!player) {
+      throw new NotFoundError(`Player not found with id ${playerId}`);
+    }
+
+    return player;
   }
 }

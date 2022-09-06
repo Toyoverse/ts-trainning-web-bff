@@ -32,7 +32,7 @@ export class CurrentPlayerInterceptor implements NestInterceptor {
     try {
       const request = context.switchToHttp().getRequest();
 
-      const token = request.headers.authorization.split(' ')[1];
+      const token = request.headers.authorization;
 
       if (!token) {
         throw new UnauthorizedException('Token invalid!');

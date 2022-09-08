@@ -14,6 +14,49 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
     return model;
   }
 
+  async isDatesConflicting(startDate: Date, endDate: Date): Promise<boolean> {
+    const startDateInAnotherEventPeriodQuery =
+      this._isInAnotherEventPeriodQuery(startDate);
+
+    const endDateInAnotherEventPeriodQuery =
+      this._isInAnotherEventPeriodQuery(endDate);
+
+    const wrapsAnotherEventPeriodQuery = this._wrapsAnotherEventPeriodQuery(
+      startDate,
+      endDate,
+    );
+
+    const query = Parse.Query.or(
+      startDateInAnotherEventPeriodQuery,
+      endDateInAnotherEventPeriodQuery,
+      wrapsAnotherEventPeriodQuery,
+    );
+
+    const count = await query.count();
+    return count > 0 ? true : false;
+  }
+
+  private _isInAnotherEventPeriodQuery(date: Date): Parse.Query {
+    const query = new Parse.Query(classes.TRAINING_EVENT);
+    query.lessThanOrEqualTo('startAt', date);
+    query.greaterThanOrEqualTo('endAt', date);
+    return query;
+  }
+
+  private _wrapsAnotherEventPeriodQuery(
+    startDate: Date,
+    endDate: Date,
+  ): Parse.Query {
+    const involvesAnotherEventPeriodQuery = new Parse.Query(
+      classes.TRAINING_EVENT,
+    );
+
+    involvesAnotherEventPeriodQuery.greaterThanOrEqualTo('startAt', startDate);
+    involvesAnotherEventPeriodQuery.lessThanOrEqualTo('endAt', endDate);
+
+    return involvesAnotherEventPeriodQuery;
+  }
+
   async getCurrent(): Promise<TrainingEventModel> {
     const now = new Date();
 

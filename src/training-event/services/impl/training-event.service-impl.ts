@@ -23,10 +23,15 @@ export class TrainingEventServiceImpl implements TrainingEventService {
   async create(dto: TrainingEventCreateDto): Promise<UUID> {
     const body: TrainingEventCreateDto = dto;
     let model = new TrainingEventModel(body);
-    await this._checkBlows(model);
+    await this._checkModel(model);
 
     model = await this._repository.save(model);
     return model.id;
+  }
+
+  private async _checkModel(model: TrainingEventModel) {
+    await this._checkBlows(model);
+    await this._checkDates(model);
   }
 
   private async _checkBlows(model: TrainingEventModel) {
@@ -39,6 +44,19 @@ export class TrainingEventServiceImpl implements TrainingEventService {
         }
         throw error;
       }
+    }
+  }
+
+  private async _checkDates(model: TrainingEventModel) {
+    const isConflicting = await this._repository.isDatesConflicting(
+      model.startAt,
+      model.endAt,
+    );
+
+    if (isConflicting) {
+      throw new ConstraintViolationError(
+        'There is already an event scheduled in this period',
+      );
     }
   }
 

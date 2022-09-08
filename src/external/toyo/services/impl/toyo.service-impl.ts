@@ -16,4 +16,19 @@ export class ToyoServiceImpl implements ToyoService {
 
     return toyo;
   }
+
+  async getToyoByTokenId(
+    toyoTokenId: string,
+  ): Promise<Parse.Object<Parse.Attributes>> {
+    const query = new Parse.Query(classes.TOYO);
+    query.equalTo('tokenId', toyoTokenId);
+
+    const toyo = await query.first();
+
+    if (!toyo) {
+      throw new NotFoundError(`Toyo with tokenId ${toyoTokenId} not found`);
+    }
+
+    return toyo;
+  }
 }

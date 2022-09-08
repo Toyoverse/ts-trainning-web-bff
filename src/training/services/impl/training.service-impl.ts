@@ -18,6 +18,7 @@ import { ToyoService } from 'src/external/toyo/services/toyo.service';
 import { TrainingEventService } from 'src/training-event/services/training-event.service';
 import { ToyoPersonaService } from 'src/external/toyo/services/toyo-persona.service';
 import { ToyoPersonaTrainingEventService } from 'src/training-event/services/toyo-persona-training-event.service';
+import { ListTrainingDto } from 'src/training/dto/list.dto';
 
 @Injectable()
 export class TrainingServiceImpl implements TrainingService {
@@ -105,7 +106,7 @@ export class TrainingServiceImpl implements TrainingService {
     return model;
   }
 
-  async list(playerId: string): Promise<TrainingModel[]> {
+  async list(playerId: string): Promise<ListTrainingDto[]> {
     const player = await this.playerService.getPlayerById(playerId);
 
     const data = await this.trainingRepository.list(player);

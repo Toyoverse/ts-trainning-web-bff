@@ -4,7 +4,7 @@ import { soliditySha3 } from 'web3-utils';
 import { TrainingModel } from '../../../training/models/training.model';
 import { TrainingRepository } from '../training.repository';
 import { InternalServerErrorException } from '@nestjs/common';
-import { compareArrays } from 'src/utils/general';
+import { compareArrays, convertToTimestamp } from 'src/utils/general';
 import { BlowConfigModel } from 'src/training-event/models/training-event.model';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
@@ -177,11 +177,15 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   private buildModelFromParseObject(
     object: Parse.Object<Parse.Attributes>,
   ): TrainingModel {
+    const startAt = convertToTimestamp(object.get('startAt'));
+    const endAt = convertToTimestamp(object.get('endAt'));
+    const claimedAt = convertToTimestamp(object.get('claimedAt'));
+
     return new TrainingModel({
       id: object.id,
-      startAt: object.get('startAt'),
-      endAt: object.get('endAt'),
-      claimedAt: object.get('claimedAt'),
+      startAt,
+      endAt,
+      claimedAt,
       toyoTokenId: object.get('toyo').get('tokenId'),
       signature: object.get('signature'),
       combination: object.get('combination'),

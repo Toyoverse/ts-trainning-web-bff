@@ -22,6 +22,7 @@ import {
 import { CurrentPlayerInterceptor } from 'src/interceptors/current-player.interceptor';
 import { CreateResponse, ErrorResponse } from 'src/utils/http/responses';
 import di from '../di';
+import { ListTrainingDto } from '../dto/list.dto';
 import { TrainingStartDto } from '../dto/start.dto';
 import { TrainingService } from '../services/training.service';
 

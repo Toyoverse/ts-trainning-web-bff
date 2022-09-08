@@ -9,3 +9,12 @@ export function compareArrays(arr1: any[], arr2: any[]) {
 
   return true;
 }
+
+export function convertToTimestamp(date: Date) {
+  if (!date) {
+    return;
+  }
+
+  const seconds = Math.floor(date.getTime() / 1000);
+  return seconds;
+}

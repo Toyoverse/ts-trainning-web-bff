@@ -101,6 +101,7 @@ export class TrainingServiceImpl implements TrainingService {
       currentTrainingEvent,
       toyoPersonaTrainingEvent,
     );
+
     return model;
   }
 

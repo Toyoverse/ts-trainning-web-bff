@@ -71,10 +71,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         'objectId',
         toyoPersonaTrainingEvent.id,
       );
-      const toyoPersonaTrainingEvento =
+      const toyoPersonaTrainingEventObj =
         await toyoPersonaTrainingEventQuery.first();
 
-      const correctCombination: string[] = toyoPersonaTrainingEvento.get(
+      const correctCombination: string[] = toyoPersonaTrainingEventObj.get(
         'correctBlowsCombination',
       );
 
@@ -83,6 +83,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         correctCombination,
       );
 
+      const card = toyoPersonaTrainingEventObj.get('cardReward');
       let signature: string;
       if (trainingEventWinner.length > 0 || !isCombinationCorrect) {
         signature = this.generateTrainingSignature(
@@ -94,7 +95,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         signature = this.generateTrainingSignature(
           toyo.id,
           currentTrainingEvent.bondReward,
-          toyoPersonaTrainingEvento.get('cardReward'),
+          card,
         );
       }
 
@@ -105,6 +106,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       training.set('isTraining', false);
 
       const savedTraining = await training.save();
+      const trainingModel = this.buildModelFromParseObject(savedTraining);
 
       if (trainingEventWinner.length === 0 && isCombinationCorrect) {
         const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner');
@@ -112,11 +114,12 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         trainingEventWinnerObj.set('toyo', toyo);
         trainingEventWinnerObj.set('training', training);
         trainingEventWinnerObj.set('trainingEvent', trainingEvent);
+        trainingEventWinnerObj.set('cardReward', card);
 
         await trainingEventWinnerObj.save();
-      }
 
-      const trainingModel = this.buildModelFromParseObject(savedTraining);
+        trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+      }
 
       return trainingModel;
     } catch (e) {

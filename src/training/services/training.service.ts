@@ -6,4 +6,5 @@ export interface TrainingService {
   start(request: TrainingStartDto): Promise<TrainingModel>;
   close(request: string): Promise<TrainingModel>;
   list(request: string): Promise<ListTrainingDto[]>;
+  getResult(request: string): Promise<TrainingModel>;
 }

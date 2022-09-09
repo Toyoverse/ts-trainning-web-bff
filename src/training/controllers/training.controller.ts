@@ -96,4 +96,19 @@ export class TrainingController {
       body: trainings,
     });
   }
+
+  @ApiOkResponse({
+    description: 'Successfully retrieved training result',
+    type: () => CreateResponse,
+  })
+  @Get('/:id')
+  async getResult(@Param('id') id: string): Promise<CreateResponse> {
+    const result = await this.trainingService.getResult(id);
+
+    return new CreateResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Successfully retrieved training result',
+      body: result,
+    });
+  }
 }

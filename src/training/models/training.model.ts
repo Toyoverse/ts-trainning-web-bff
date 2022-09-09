@@ -5,9 +5,11 @@ export class TrainingModel {
   startAt: Date | number;
   endAt: Date | number;
   claimedAt: Date | number;
+  bond?: number;
   toyoTokenId?: string;
   signature: string;
   combination: string[];
+  isCombinationCorrect?: boolean;
   card?: CardTrainingRewardGetCurrentDto;
 
   constructor(attrs: {
@@ -15,18 +17,22 @@ export class TrainingModel {
     startAt: Date | number;
     endAt: Date | number;
     claimedAt: Date | number;
+    bond?: number;
     toyoTokenId?: string;
     signature: string;
     combination: string[];
+    isCombinationCorrect?: boolean;
     card?: CardTrainingRewardGetCurrentDto;
   }) {
     this.id = attrs.id;
     this.startAt = attrs.startAt;
     this.endAt = attrs.endAt;
     this.claimedAt = attrs.claimedAt;
+    this.bond = attrs.bond;
     this.toyoTokenId = attrs.toyoTokenId;
     this.signature = attrs.signature;
     this.combination = attrs.combination;
+    this.isCombinationCorrect = attrs.isCombinationCorrect;
     this.card = attrs.card;
   }
 }

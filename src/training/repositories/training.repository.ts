@@ -22,4 +22,9 @@ export interface TrainingRepository {
     toyo: Parse.Object<Parse.Attributes>,
   ): Promise<boolean>;
   getTrainingById(trainingId: string): Promise<Parse.Object<Parse.Attributes>>;
+  getResult(
+    training: Parse.Object<Parse.Attributes>,
+    currentTrainingEvent: TrainingEventGetCurrentDto,
+    toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
+  ): Promise<TrainingModel>;
 }

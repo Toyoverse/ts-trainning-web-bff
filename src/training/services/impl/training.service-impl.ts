@@ -113,4 +113,32 @@ export class TrainingServiceImpl implements TrainingService {
 
     return data;
   }
+
+  async getResult(id: string): Promise<TrainingModel> {
+    const training = await this.trainingRepository.getTrainingById(id);
+
+    if (!training) {
+      throw new NotFoundException('Training not found');
+    }
+
+    const toyoId = training.get('toyo').id;
+    const toyo = await this.toyoService.getToyoById(toyoId);
+
+    const toyoPersona = await this.toyoPersonaService.getById(
+      toyo.get('toyoPersonaOrigin').id,
+    );
+
+    const currentTrainingEvent = await this.trainingEventService.getCurrent();
+
+    const toyoPersonaTrainingEvent =
+      await this.toyoPersonaTrainingEventService.getCurrent(toyoPersona.id);
+
+    const model = await this.trainingRepository.getResult(
+      training,
+      currentTrainingEvent,
+      toyoPersonaTrainingEvent,
+    );
+
+    return model;
+  }
 }

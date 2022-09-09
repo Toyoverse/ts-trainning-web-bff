@@ -49,6 +49,39 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
+  async getResult(
+    training: Parse.Object<Parse.Attributes>,
+    currentTrainingEvent: TrainingEventGetCurrentDto,
+    toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
+  ): Promise<TrainingModel> {
+    const toyoPersonaTrainingEventQuery = new Parse.Query(
+      'ToyoPersonaTrainingEvent',
+    );
+    toyoPersonaTrainingEventQuery.equalTo(
+      'objectId',
+      toyoPersonaTrainingEvent.id,
+    );
+    const toyoPersonaTrainingEventObj =
+      await toyoPersonaTrainingEventQuery.first();
+
+    const correctCombination: string[] = toyoPersonaTrainingEventObj.get(
+      'correctBlowsCombination',
+    );
+
+    const isCombinationCorrect = compareArrays(
+      training.get('combination'),
+      correctCombination,
+    );
+
+    const trainingModel = this.buildModelFromParseObject(training);
+
+    trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+    trainingModel.bond = currentTrainingEvent.bondReward;
+    trainingModel.isCombinationCorrect = isCombinationCorrect;
+
+    return trainingModel;
+  }
+
   async close(
     training: Parse.Object<Parse.Attributes>,
     toyo: Parse.Object<Parse.Attributes>,
@@ -84,6 +117,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       );
 
       const card = toyoPersonaTrainingEventObj.get('cardReward');
+
       let signature: string;
       if (trainingEventWinner.length > 0 || !isCombinationCorrect) {
         signature = this.generateTrainingSignature(
@@ -97,6 +131,15 @@ export class TrainingRepositoryImpl implements TrainingRepository {
           currentTrainingEvent.bondReward,
           card,
         );
+
+        const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner');
+
+        trainingEventWinnerObj.set('toyo', toyo);
+        trainingEventWinnerObj.set('training', training);
+        trainingEventWinnerObj.set('trainingEvent', trainingEvent);
+        trainingEventWinnerObj.set('cardReward', card);
+
+        await trainingEventWinnerObj.save();
       }
 
       const now = new Date();
@@ -109,15 +152,6 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       const trainingModel = this.buildModelFromParseObject(savedTraining);
 
       if (trainingEventWinner.length === 0 && isCombinationCorrect) {
-        const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner');
-
-        trainingEventWinnerObj.set('toyo', toyo);
-        trainingEventWinnerObj.set('training', training);
-        trainingEventWinnerObj.set('trainingEvent', trainingEvent);
-        trainingEventWinnerObj.set('cardReward', card);
-
-        await trainingEventWinnerObj.save();
-
         trainingModel.card = toyoPersonaTrainingEvent.cardReward;
       }
 

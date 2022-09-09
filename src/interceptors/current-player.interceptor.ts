@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { PlayerService } from 'src/external/player/services/player.service';
-import di from 'src/training/di';
+import di from 'src/external/player/di';
 
 interface TokenPayload {
   walletId: string;

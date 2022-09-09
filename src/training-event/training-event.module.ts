@@ -8,7 +8,18 @@ import { ToyoModule } from 'src/external/toyo/toyo.module';
 
 @Module({
   imports: [TrainingBlowModule, ToyoModule],
-  providers: providers,
+  providers: [
+    providers.CardTrainingRewardMetadataRepository,
+    providers.CardTrainingRewardService,
+    providers.ToyoPersonaTrainingEventRepository,
+    providers.ToyoPersonaTrainingEventService,
+    providers.TrainingEventRepository,
+    providers.TrainingEventService,
+  ],
   controllers: [TrainingEventController, ToyoPersonaTrainingEventController],
+  exports: [
+    providers.TrainingEventService,
+    providers.ToyoPersonaTrainingEventService,
+  ],
 })
 export class TrainingEventModule {}

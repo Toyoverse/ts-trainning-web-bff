@@ -22,6 +22,7 @@ import {
 import { CurrentPlayerInterceptor } from 'src/interceptors/current-player.interceptor';
 import { CreateResponse, ErrorResponse } from 'src/utils/http/responses';
 import di from '../di';
+import { ListTrainingDto } from '../dto/list.dto';
 import { TrainingStartDto } from '../dto/start.dto';
 import { TrainingService } from '../services/training.service';
 
@@ -93,6 +94,21 @@ export class TrainingController {
       statusCode: HttpStatus.OK,
       message: 'Successfully retrieved player active trainings',
       body: trainings,
+    });
+  }
+
+  @ApiOkResponse({
+    description: 'Successfully retrieved training result',
+    type: () => CreateResponse,
+  })
+  @Get('/:id')
+  async getResult(@Param('id') id: string): Promise<CreateResponse> {
+    const result = await this.trainingService.getResult(id);
+
+    return new CreateResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Successfully retrieved training result',
+      body: result,
     });
   }
 }

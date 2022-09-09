@@ -155,9 +155,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       let signature: string;
       if (toyoWinner.length > 0 || !isCombinationCorrect) {
-        signature = this.generateTrainingSignature(toyoId, bondReward, '');
+        signature = this.generateTrainingSignature(id, toyoId, bondReward, '');
       } else {
         signature = this.generateTrainingSignature(
+          id,
           toyoId,
           bondReward,
           card[0].id,
@@ -223,13 +224,14 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   }
 
   private generateTrainingSignature(
+    trainingId: string,
     toyoId: string,
     bondAmount: number,
     cardCode: string,
   ): string {
     const eth: Eth = new Web3Eth();
 
-    const message = soliditySha3(toyoId + bondAmount + cardCode);
+    const message = soliditySha3(trainingId + toyoId + bondAmount + cardCode);
     const { signature } = eth.accounts.sign(message, process.env.PRIVATE_KEY);
 
     return signature;

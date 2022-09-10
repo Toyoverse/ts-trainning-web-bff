@@ -17,7 +17,7 @@ export class CardTrainingRewardMetadataRepositoryImpl
       fs.mkdirSync(this.CARDS_META_DIRECTORY, { recursive: true });
     }
 
-    const fileName = CryptoJS.MD5(card.id).toString() + '.json';
+    const fileName = `${card.cardCode}.json`;
 
     const filePath = path.join(this.CARDS_META_DIRECTORY, fileName);
     const jsonMetadata = JSON.stringify(card.getMetadata());

@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import * as CryptoJS from 'crypto-js';
+
 import di from 'src/training-event/di';
 import trainingBlowsDi from 'src/training-blow/di';
 import toyoDi from 'src/external/toyo/di';
@@ -42,6 +44,11 @@ export class ToyoPersonaTrainingEventServiceImpl
   async create(createDto: ToyoPersonaTrainingEventCreateDto): Promise<UUID> {
     await this._checkPersona(createDto.toyoPersonaId);
     await this._checkBlowsIds(createDto.correctBlowsCombinationIds);
+
+    const cardCode: string = CryptoJS.MD5(
+      new Date().getTime().toString(),
+    ).toString();
+    createDto.cardReward.cardCode = cardCode;
 
     const model = new ToyoPersonaTrainingEventModel({
       ...createDto,

@@ -1,6 +1,6 @@
 import * as Parse from 'parse/node';
 import { Eth } from 'web3-eth';
-import { soliditySha3 } from 'web3-utils';
+import { keccak256, toWei } from 'web3-utils';
 import { TrainingModel } from '../../../training/models/training.model';
 import { TrainingRepository } from '../training.repository';
 import { InternalServerErrorException } from '@nestjs/common';
@@ -97,6 +97,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
       trainingEventWinnerQuery.equalTo('toyo', toyo);
+      trainingEventWinnerQuery.equalTo('training', training);
       const trainingEventWinner = await trainingEventWinnerQuery.find();
 
       const toyoPersonaTrainingEventQuery = new Parse.Query(
@@ -120,20 +121,24 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       const card = toyoPersonaTrainingEventObj.get('cardReward');
 
+      const cardTrainingRewardQuery = new Parse.Query('CardTrainingReward');
+      cardTrainingRewardQuery.equalTo('objectId', card.id);
+      const cardTrainingRewardObj = await cardTrainingRewardQuery.first();
+
       let signature: string;
       if (trainingEventWinner.length > 0 || !isCombinationCorrect) {
         signature = this.generateTrainingSignature(
-          currentTrainingEvent.id,
-          toyo.id,
+          training.id,
+          toyo.get('tokenId'),
           currentTrainingEvent.bondReward,
           '',
         );
       } else {
         signature = this.generateTrainingSignature(
-          currentTrainingEvent.id,
-          toyo.id,
+          training.id,
+          toyo.get('tokenId'),
           currentTrainingEvent.bondReward,
-          card,
+          cardTrainingRewardObj.get('cardCode'),
         );
 
         const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner');
@@ -232,13 +237,23 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
   private generateTrainingSignature(
     trainingId: string,
-    toyoId: string,
+    toyoTokenId: string,
     bondAmount: number,
     cardCode: string,
   ): string {
     const eth: Eth = new Web3Eth();
 
-    const message = soliditySha3(trainingId + toyoId + bondAmount + cardCode);
+    const bondToString = bondAmount.toString();
+
+    const formattedBondAmount = toWei(bondToString, 'ether');
+
+    const message = keccak256(
+      eth.abi.encodeParameters(
+        ['string', 'uint256', 'uint256', 'string'],
+        [trainingId, toyoTokenId, formattedBondAmount, cardCode],
+      ),
+    );
+
     const { signature } = eth.accounts.sign(message, process.env.PRIVATE_KEY);
 
     return signature;

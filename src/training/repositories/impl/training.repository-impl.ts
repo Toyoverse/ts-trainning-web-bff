@@ -68,7 +68,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       'correctBlowsCombination',
     );
 
-    const isCombinationCorrect = compareArrays(
+    const combinationCorrect = compareArrays(
       training.get('combination'),
       correctCombination,
     );
@@ -77,7 +77,9 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
     trainingModel.card = toyoPersonaTrainingEvent.cardReward;
     trainingModel.bond = currentTrainingEvent.bondReward;
-    trainingModel.isCombinationCorrect = isCombinationCorrect;
+    trainingModel.isCombinationCorrect =
+      combinationCorrect.isCombinationCorrect;
+    trainingModel.combinationResult = combinationCorrect;
 
     return trainingModel;
   }

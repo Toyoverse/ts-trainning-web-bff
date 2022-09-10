@@ -10,6 +10,7 @@ export class TrainingModel {
   signature: string;
   combination: string[];
   isCombinationCorrect?: boolean;
+  combinationResult?: object;
   card?: CardTrainingRewardGetCurrentDto;
 
   constructor(attrs: {
@@ -22,6 +23,7 @@ export class TrainingModel {
     signature: string;
     combination: string[];
     isCombinationCorrect?: boolean;
+    combinationResult?: object;
     card?: CardTrainingRewardGetCurrentDto;
   }) {
     this.id = attrs.id;
@@ -34,5 +36,6 @@ export class TrainingModel {
     this.combination = attrs.combination;
     this.isCombinationCorrect = attrs.isCombinationCorrect;
     this.card = attrs.card;
+    this.combinationResult = attrs.combinationResult;
   }
 }

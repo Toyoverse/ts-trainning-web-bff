@@ -20,7 +20,7 @@ async function bootstrap(): Promise<Handler> {
   app.useGlobalFilters(new ApiHttpErrorFilter());
 
   const options: cors.CorsOptions = {
-    methods: 'GET,POST,OPTIONS',
+    methods: 'GET,POST,OPTIONS,PUT',
     origin: '*',
   };
 

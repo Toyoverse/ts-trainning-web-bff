@@ -127,6 +127,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       cardTrainingRewardQuery.equalTo('objectId', card.id);
       const cardTrainingRewardObj = await cardTrainingRewardQuery.first();
 
+      const bondToString = currentTrainingEvent.bondReward.toString();
+
+      const formattedBondAmount = toWei(bondToString, 'ether');
+
       let signature: string;
       if (
         trainingEventWinner.length > 0 ||
@@ -135,14 +139,14 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         signature = this.generateTrainingSignature(
           training.id,
           toyo.get('tokenId'),
-          currentTrainingEvent.bondReward,
+          formattedBondAmount,
           '',
         );
       } else {
         signature = this.generateTrainingSignature(
           training.id,
           toyo.get('tokenId'),
-          currentTrainingEvent.bondReward,
+          formattedBondAmount,
           cardTrainingRewardObj.get('cardCode'),
         );
 
@@ -163,10 +167,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       training.set('isTraining', false);
 
       const savedTraining = await training.save();
-      const trainingModel = this.buildModelFromParseObject(
-        savedTraining,
-        currentTrainingEvent.bondReward,
-      );
+      const trainingModel = this.buildModelFromParseObject(savedTraining, {
+        bond: currentTrainingEvent.bondReward,
+        bondFormatted: formattedBondAmount,
+      });
 
       if (
         trainingEventWinner.length === 0 &&
@@ -230,7 +234,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
   private buildModelFromParseObject(
     object: Parse.Object<Parse.Attributes>,
-    bondReward?: number,
+    bondReward?: { bond: number; bondFormatted: string },
   ): TrainingModel {
     const startAt = convertToTimestamp(object.get('startAt'));
     const endAt = convertToTimestamp(object.get('endAt'));
@@ -244,26 +248,22 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       toyoTokenId: object.get('toyo').get('tokenId'),
       signature: object.get('signature'),
       combination: object.get('combination'),
-      bond: bondReward,
+      bond: bondReward?.bondFormatted || bondReward?.bond,
     });
   }
 
   private generateTrainingSignature(
     trainingId: string,
     toyoTokenId: string,
-    bondAmount: number,
+    bondAmount: string,
     cardCode: string,
   ): string {
     const eth: Eth = new Web3Eth();
 
-    const bondToString = bondAmount.toString();
-
-    const formattedBondAmount = toWei(bondToString, 'ether');
-
     const message = keccak256(
       eth.abi.encodeParameters(
         ['string', 'uint256', 'uint256', 'string'],
-        [trainingId, toyoTokenId, formattedBondAmount, cardCode],
+        [trainingId, toyoTokenId, bondAmount, cardCode],
       ),
     );
 

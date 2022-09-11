@@ -5,7 +5,7 @@ export class TrainingModel {
   startAt: Date | number;
   endAt: Date | number;
   claimedAt: Date | number;
-  bond?: number;
+  bond?: number | string;
   toyoTokenId?: string;
   signature: string;
   combination: string[];
@@ -18,7 +18,7 @@ export class TrainingModel {
     startAt: Date | number;
     endAt: Date | number;
     claimedAt: Date | number;
-    bond?: number;
+    bond?: number | string;
     toyoTokenId?: string;
     signature: string;
     combination: string[];

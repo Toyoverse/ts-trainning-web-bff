@@ -18,7 +18,7 @@ async function bootstrap() {
   const urls: string[] = process.env.CORS_ENABLED_URL.split('|');
 
   app.enableCors({
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT'],
     origin: urls,
   });
   app.use(helmet());

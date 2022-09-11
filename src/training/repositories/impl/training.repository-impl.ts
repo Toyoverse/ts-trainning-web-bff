@@ -75,7 +75,9 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
     const trainingModel = this.buildModelFromParseObject(training);
 
-    trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+    if (combinationCorrect.isCombinationCorrect) {
+      trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+    }
     trainingModel.bond = currentTrainingEvent.bondReward;
     trainingModel.isCombinationCorrect =
       combinationCorrect.isCombinationCorrect;
@@ -114,7 +116,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         'correctBlowsCombination',
       );
 
-      const isCombinationCorrect = compareArrays(
+      const compareCombination = compareArrays(
         training.get('combination'),
         correctCombination,
       );
@@ -126,7 +128,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       const cardTrainingRewardObj = await cardTrainingRewardQuery.first();
 
       let signature: string;
-      if (trainingEventWinner.length > 0 || !isCombinationCorrect) {
+      if (
+        trainingEventWinner.length > 0 ||
+        !compareCombination.isCombinationCorrect
+      ) {
         signature = this.generateTrainingSignature(
           training.id,
           toyo.get('tokenId'),
@@ -158,9 +163,15 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       training.set('isTraining', false);
 
       const savedTraining = await training.save();
-      const trainingModel = this.buildModelFromParseObject(savedTraining);
+      const trainingModel = this.buildModelFromParseObject(
+        savedTraining,
+        currentTrainingEvent.bondReward,
+      );
 
-      if (trainingEventWinner.length === 0 && isCombinationCorrect) {
+      if (
+        trainingEventWinner.length === 0 &&
+        compareCombination.isCombinationCorrect
+      ) {
         trainingModel.card = toyoPersonaTrainingEvent.cardReward;
       }
 
@@ -219,6 +230,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
   private buildModelFromParseObject(
     object: Parse.Object<Parse.Attributes>,
+    bondReward?: number,
   ): TrainingModel {
     const startAt = convertToTimestamp(object.get('startAt'));
     const endAt = convertToTimestamp(object.get('endAt'));
@@ -232,6 +244,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       toyoTokenId: object.get('toyo').get('tokenId'),
       signature: object.get('signature'),
       combination: object.get('combination'),
+      bond: bondReward,
     });
   }
 

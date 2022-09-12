@@ -6,7 +6,6 @@ import { TrainingRepository } from '../training.repository';
 import { InternalServerErrorException } from '@nestjs/common';
 import { compareArrays, convertToTimestamp } from 'src/utils/general';
 import { BlowConfigModel } from 'src/training-event/models/training-event.model';
-import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -51,7 +50,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
   async getResult(
     training: Parse.Object<Parse.Attributes>,
-    currentTrainingEvent: TrainingEventGetCurrentDto,
+    trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel> {
     const toyoPersonaTrainingEventQuery = new Parse.Query(
@@ -78,7 +77,8 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     if (combinationCorrect.isCombinationCorrect) {
       trainingModel.card = toyoPersonaTrainingEvent.cardReward;
     }
-    trainingModel.bond = currentTrainingEvent.bondReward;
+
+    trainingModel.bond = trainingEvent.get('bondReward');
     trainingModel.isCombinationCorrect =
       combinationCorrect.isCombinationCorrect;
     trainingModel.combinationResult = combinationCorrect;
@@ -89,14 +89,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   async close(
     training: Parse.Object<Parse.Attributes>,
     toyo: Parse.Object<Parse.Attributes>,
-    currentTrainingEvent: TrainingEventGetCurrentDto,
+    trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel> {
     try {
-      const trainingEventQuery = new Parse.Query('TrainingEvent');
-      trainingEventQuery.equalTo('objectId', currentTrainingEvent.id);
-      const trainingEvent = await trainingEventQuery.first();
-
       const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
       trainingEventWinnerQuery.equalTo('toyo', toyo);
       trainingEventWinnerQuery.equalTo('training', training);
@@ -127,7 +123,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       cardTrainingRewardQuery.equalTo('objectId', card.id);
       const cardTrainingRewardObj = await cardTrainingRewardQuery.first();
 
-      const bondToString = currentTrainingEvent.bondReward.toString();
+      const bondToString: string = trainingEvent.get('bondReward').toString();
 
       const formattedBondAmount = toWei(bondToString, 'ether');
 
@@ -168,7 +164,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       const savedTraining = await training.save();
       const trainingModel = this.buildModelFromParseObject(savedTraining, {
-        bond: currentTrainingEvent.bondReward,
+        bond: trainingEvent.get('bondReward'),
         bondFormatted: formattedBondAmount,
       });
 

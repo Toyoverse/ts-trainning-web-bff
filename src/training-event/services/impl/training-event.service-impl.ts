@@ -65,4 +65,14 @@ export class TrainingEventServiceImpl implements TrainingEventService {
       blowsConfig: model.blowsConfig,
     });
   }
+
+  async getById(id: string): Promise<Parse.Object<Parse.Attributes>> {
+    const model = await this._repository.getById(id);
+
+    if (!model) {
+      throw new NotFoundError(`There is no training event with id ${id}`);
+    }
+
+    return model;
+  }
 }

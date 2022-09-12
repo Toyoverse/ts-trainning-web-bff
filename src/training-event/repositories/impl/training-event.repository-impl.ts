@@ -31,6 +31,19 @@ export class TrainingEventRepositoryImpl implements TrainingEventRepository {
     return this._buildModelFromParseObject(object);
   }
 
+  async getById(id: string): Promise<Parse.Object<Parse.Attributes>> {
+    const query = new Parse.Query(classes.TRAINING_EVENT);
+    query.equalTo('objectId', id);
+
+    const object = await query.first();
+
+    if (!object) {
+      return undefined;
+    }
+
+    return object;
+  }
+
   private async _buildParseObjectFromModel(
     model: TrainingEventModel,
   ): Promise<Parse.Object<Parse.Attributes>> {

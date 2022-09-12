@@ -91,7 +91,9 @@ export class TrainingServiceImpl implements TrainingService {
       toyo.get('toyoPersonaOrigin').id,
     );
 
-    const currentTrainingEvent = await this.trainingEventService.getCurrent();
+    const trainingEvent = await this.trainingEventService.getById(
+      training.get('trainingEvent').id,
+    );
 
     const toyoPersonaTrainingEvent =
       await this.toyoPersonaTrainingEventService.getCurrent(toyoPersona.id);
@@ -99,7 +101,7 @@ export class TrainingServiceImpl implements TrainingService {
     const model = await this.trainingRepository.close(
       training,
       toyo,
-      currentTrainingEvent,
+      trainingEvent,
       toyoPersonaTrainingEvent,
     );
 
@@ -128,14 +130,16 @@ export class TrainingServiceImpl implements TrainingService {
       toyo.get('toyoPersonaOrigin').id,
     );
 
-    const currentTrainingEvent = await this.trainingEventService.getCurrent();
+    const trainingEvent = await this.trainingEventService.getById(
+      training.get('trainingEvent').id,
+    );
 
     const toyoPersonaTrainingEvent =
       await this.toyoPersonaTrainingEventService.getCurrent(toyoPersona.id);
 
     const model = await this.trainingRepository.getResult(
       training,
-      currentTrainingEvent,
+      trainingEvent,
       toyoPersonaTrainingEvent,
     );
 

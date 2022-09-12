@@ -74,11 +74,14 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
     const trainingModel = this.buildModelFromParseObject(training);
 
+    trainingModel.bond = trainingEvent.get('bondReward');
+
     if (combinationCorrect.isCombinationCorrect) {
       trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+      trainingModel.bond =
+        trainingEvent.get('bondReward') + trainingEvent.get('bonusBondReward');
     }
 
-    trainingModel.bond = trainingEvent.get('bondReward');
     trainingModel.isCombinationCorrect =
       combinationCorrect.isCombinationCorrect;
     trainingModel.combinationResult = combinationCorrect;
@@ -123,7 +126,11 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       cardTrainingRewardQuery.equalTo('objectId', card.id);
       const cardTrainingRewardObj = await cardTrainingRewardQuery.first();
 
-      const bondToString: string = trainingEvent.get('bondReward').toString();
+      const bondReward: number = compareCombination.isCombinationCorrect
+        ? trainingEvent.get('bondReward') + trainingEvent.get('bonusBondReward')
+        : trainingEvent.get('bondReward');
+
+      const bondToString = bondReward.toString();
 
       const formattedBondAmount = toWei(bondToString, 'ether');
 

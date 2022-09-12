@@ -5,4 +5,5 @@ import { TrainingEventGetCurrentDto } from '../dto/training-event/get-current.dt
 export interface TrainingEventService {
   create(request: TrainingEventCreateDto): Promise<UUID>;
   getCurrent(): Promise<TrainingEventGetCurrentDto>;
+  getById(id: string): Promise<Parse.Object<Parse.Attributes>>;
 }

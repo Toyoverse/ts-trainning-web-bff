@@ -8,6 +8,7 @@ import { compareArrays, convertToTimestamp } from 'src/utils/general';
 import { BlowConfigModel } from 'src/training-event/models/training-event.model';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
+import { classes } from 'src/config/back4app';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
@@ -16,13 +17,15 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   private readonly DATABASE_CLASS = 'ToyoTraining';
 
   async start(
-    toyo: Parse.Object<Parse.Attributes>,
-    player: Parse.Object<Parse.Attributes>,
+    toyoId: string,
+    playerId: string,
     currentTrainingEventId: string,
     config: BlowConfigModel,
     combination: string[],
   ): Promise<TrainingModel> {
     const training = new Parse.Object(this.DATABASE_CLASS);
+    const toyo = new Parse.Object(classes.TOYO, { id: toyoId });
+    const player = new Parse.Object(classes.PLAYERS, { id: playerId });
 
     try {
       const { startAt, endAt } = this.calculateTrainingDuration(config);
@@ -203,11 +206,14 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
-  async verifyIfToyoIsTraining(
-    toyo: Parse.Object<Parse.Attributes>,
-  ): Promise<boolean> {
+  async verifyIfToyoIsTraining(toyoId: string): Promise<boolean> {
     const trainingQuery = new Parse.Query(this.DATABASE_CLASS);
-    trainingQuery.equalTo('toyo', toyo);
+
+    const toyoParseObject = new Parse.Object(classes.TOYO, {
+      id: toyoId,
+    });
+
+    trainingQuery.equalTo('toyo', toyoParseObject);
     trainingQuery.equalTo('isTraining', true);
     const toyoList = await trainingQuery.find();
 

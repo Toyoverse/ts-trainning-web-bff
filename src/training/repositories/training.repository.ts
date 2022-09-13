@@ -5,8 +5,8 @@ import { TrainingModel } from '../models/training.model';
 
 export interface TrainingRepository {
   start(
-    toyo: Parse.Object<Parse.Attributes>,
-    player: Parse.Object<Parse.Attributes>,
+    toyoId: string,
+    playerId: string,
     currentTrainingEventId: string,
     config: BlowConfigModel,
     combination: string[],
@@ -18,9 +18,7 @@ export interface TrainingRepository {
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel>;
   list(player: Parse.Object<Parse.Attributes>): Promise<TrainingModel[]>;
-  verifyIfToyoIsTraining(
-    toyo: Parse.Object<Parse.Attributes>,
-  ): Promise<boolean>;
+  verifyIfToyoIsTraining(toyoId: string): Promise<boolean>;
   getTrainingById(trainingId: string): Promise<Parse.Object<Parse.Attributes>>;
   getResult(
     training: Parse.Object<Parse.Attributes>,

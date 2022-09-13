@@ -44,18 +44,15 @@ export class TrainingServiceImpl implements TrainingService {
   async start(dto: TrainingStartDto): Promise<TrainingModel> {
     const toyos = await this.playerToyoService.getPlayerToyos(dto.playerId);
 
-    const [ownToyo] = toyos.filter((toyo) => toyo.tokenId === dto.toyoTokenId);
-    if (!ownToyo) {
+    const [toyo] = toyos.filter((toyo) => toyo.tokenId === dto.toyoTokenId);
+    if (!toyo) {
       throw new ForbiddenError(
         'You cannot start a training of toyo that you do not have',
       );
     }
 
-    const player = await this.playerService.getPlayerById(dto.playerId);
-    const toyo = await this.toyoService.getToyoByTokenId(dto.toyoTokenId);
-
     const isToyoAlreadyTraining =
-      await this.trainingRepository.verifyIfToyoIsTraining(toyo);
+      await this.trainingRepository.verifyIfToyoIsTraining(toyo.id);
 
     if (isToyoAlreadyTraining) {
       throw new BadRequestException(
@@ -74,8 +71,8 @@ export class TrainingServiceImpl implements TrainingService {
     }
 
     const training = await this.trainingRepository.start(
-      toyo,
-      player,
+      toyo.id,
+      dto.playerId,
       currentTrainingEvent.id,
       config,
       dto.combination,

@@ -8,12 +8,15 @@ import { compareArrays, convertToTimestamp } from 'src/utils/general';
 import { BlowConfigModel } from 'src/training-event/models/training-event.model';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 import { classes } from 'src/config/back4app';
+import { request, gql } from 'graphql-request';
+import { ToyoDto } from 'src/external/player/dto/toyo.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
 
 export class TrainingRepositoryImpl implements TrainingRepository {
   private readonly DATABASE_CLASS = 'ToyoTraining';
+  private readonly THEGRAPH_URL = process.env.THEGRAPH_URL;
 
   async start(
     toyoId: string,
@@ -191,13 +194,48 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
-  async list(player: Parse.Object<Parse.Attributes>): Promise<TrainingModel[]> {
+  async resetTrainings(toyos: ToyoDto[]) {
     try {
+      for (const toyo of toyos) {
+        const toyoObj = new Parse.Object(classes.TOYO, { id: toyo.id });
+
+        const trainings = await this.getClosedTrainingByToyo(toyoObj);
+
+        if (trainings.length > 0) {
+          const claims = await this.getClaimsByTokenId(toyo.tokenId);
+
+          if (trainings.length !== claims.length) {
+            trainings.sort((a, b) => {
+              return (
+                new Date(b.get('updatedAt')).getTime() -
+                new Date(a.get('updatedAt')).getTime()
+              );
+            });
+            trainings[0].unset('claimedAt');
+            trainings[0].unset('signature');
+            trainings[0].set('isTraining', true);
+            await trainings[0].save();
+          }
+        }
+      }
+    } catch (e) {
+      throw new InternalServerErrorException(e);
+    }
+    return;
+  }
+
+  async list(
+    player: Parse.Object<Parse.Attributes>,
+    toyos: ToyoDto[],
+  ): Promise<TrainingModel[]> {
+    try {
+      await this.resetTrainings(toyos);
+
       const query = new Parse.Query(this.DATABASE_CLASS);
       query.equalTo('claimedAt', undefined);
       query.equalTo('player', player);
       query.include('toyo');
-      const trainingList = await query.find();
+      const trainingList = await query.findAll();
 
       const formattedArray = trainingList.map((e) => {
         return this.buildModelFromParseObject(e);
@@ -207,6 +245,32 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     } catch (e) {
       throw new InternalServerErrorException(e);
     }
+  }
+
+  async getClosedTrainingByToyo(
+    toyo: Parse.Object<Parse.Attributes>,
+  ): Promise<Parse.Object<Parse.Attributes>[]> {
+    const query = new Parse.Query(this.DATABASE_CLASS);
+    query.equalTo('toyo', toyo);
+    query.exists('claimedAt');
+    query.exists('signature');
+    return await query.findAll();
+  }
+
+  async getClaimsByTokenId(tokenId: string): Promise<any[]> {
+    const query = gql`
+      {
+        tokenClaimedEntities(first: 1000, where: {tokenId: "${tokenId.toString()}"}) {
+          tokenId,
+          id,
+          cardCode,
+          bondAmount
+        }
+      }
+    `;
+
+    const data: any = await request(this.THEGRAPH_URL, query);
+    return data?.tokenClaimedEntities;
   }
 
   async verifyIfToyoIsTraining(toyoId: string): Promise<boolean> {

@@ -127,8 +127,9 @@ export class TrainingServiceImpl implements TrainingService {
 
   async list(playerId: string): Promise<ListTrainingDto[]> {
     const player = await this.playerService.getPlayerById(playerId);
+    const toyos = await this.playerToyoService.getPlayerToyos(player.id);
 
-    const data = await this.trainingRepository.list(player);
+    const data = await this.trainingRepository.list(player, toyos);
 
     return data;
   }

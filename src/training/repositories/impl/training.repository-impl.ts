@@ -77,7 +77,13 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     trainingModel.bond = trainingEvent.get('bondReward');
 
     if (combinationCorrect.isCombinationCorrect) {
-      trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+      const hasWonCard: boolean = await this.checkIfToyoAlreadyHasCard(
+        trainingEvent,
+        training.get('toyo'),
+      );
+      if (!hasWonCard) {
+        trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+      }
       trainingModel.bond =
         trainingEvent.get('bondReward') + trainingEvent.get('bonusBondReward');
     }
@@ -96,10 +102,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel> {
     try {
-      const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
-      trainingEventWinnerQuery.equalTo('toyo', toyo);
-      trainingEventWinnerQuery.equalTo('training', training);
-      const trainingEventWinner = await trainingEventWinnerQuery.find();
+      const hasWonCard: boolean = await this.checkIfToyoAlreadyHasCard(
+        trainingEvent,
+        training.get('toyo'),
+      );
 
       const toyoPersonaTrainingEventQuery = new Parse.Query(
         'ToyoPersonaTrainingEvent',
@@ -135,10 +141,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       const formattedBondAmount = toWei(bondToString, 'ether');
 
       let signature: string;
-      if (
-        trainingEventWinner.length > 0 ||
-        !compareCombination.isCombinationCorrect
-      ) {
+      if (hasWonCard || !compareCombination.isCombinationCorrect) {
         signature = this.generateTrainingSignature(
           training.id,
           toyo.get('tokenId'),
@@ -175,10 +178,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         bondFormatted: formattedBondAmount,
       });
 
-      if (
-        trainingEventWinner.length === 0 &&
-        compareCombination.isCombinationCorrect
-      ) {
+      if (!hasWonCard && compareCombination.isCombinationCorrect) {
         trainingModel.card = toyoPersonaTrainingEvent.cardReward;
       }
 
@@ -284,5 +284,21 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     const endAt = new Date(Date.now() + trainingDuration * (60 * 60 * 1000));
 
     return { startAt, endAt };
+  }
+
+  private async checkIfToyoAlreadyHasCard(
+    training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
+  ): Promise<boolean> {
+    const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
+    trainingEventWinnerQuery.equalTo('toyo', toyo);
+    trainingEventWinnerQuery.equalTo('trainingEvent', training);
+    const trainingEventWinner = await trainingEventWinnerQuery.find();
+
+    if (trainingEventWinner.length > 0) {
+      return true;
+    }
+
+    return false;
   }
 }

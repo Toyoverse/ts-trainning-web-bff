@@ -57,7 +57,8 @@ export class ToyoPersonaTrainingEventServiceImpl
 
     const { id, cardReward } = await this._repository.save(model);
 
-    await this._createCardMetadata(cardReward);
+    //Metadata not created in production transaction
+    // await this._createCardMetadata(cardReward);
 
     return id;
   }

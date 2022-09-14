@@ -9,12 +9,11 @@ import {
   HttpStatus,
   Req,
   UseInterceptors,
-  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
-  ApiNotFoundResponse,
   ApiOkResponse,
   ApiQuery,
   ApiTags,
@@ -22,12 +21,12 @@ import {
 import { CurrentPlayerInterceptor } from 'src/interceptors/current-player.interceptor';
 import { CreateResponse, ErrorResponse } from 'src/utils/http/responses';
 import di from '../di';
-import { ListTrainingDto } from '../dto/list.dto';
 import { TrainingStartDto } from '../dto/start.dto';
 import { TrainingService } from '../services/training.service';
 
 @ApiTags('training')
 @Controller('/training')
+@UseInterceptors(CurrentPlayerInterceptor)
 export class TrainingController {
   constructor(
     @Inject(di.TRAINING_SERVICE)
@@ -38,11 +37,14 @@ export class TrainingController {
     description: 'Training successfully started',
     type: () => CreateResponse,
   })
+  @ApiForbiddenResponse({
+    description: 'Forbidden',
+    type: () => ErrorResponse,
+  })
   @ApiInternalServerErrorResponse({
     description: 'An error occurred',
     type: () => ErrorResponse,
   })
-  @UseInterceptors(CurrentPlayerInterceptor)
   @Post()
   async start(
     @Req() req: any,
@@ -64,13 +66,21 @@ export class TrainingController {
     description: 'Training successfully finished',
     type: () => CreateResponse,
   })
+  @ApiForbiddenResponse({
+    description: 'Forbidden',
+    type: () => ErrorResponse,
+  })
   @ApiInternalServerErrorResponse({
     description: 'An error occurred',
     type: () => ErrorResponse,
   })
   @Put('/:id')
-  async close(@Param('id') id: string): Promise<CreateResponse> {
-    const model = await this.trainingService.close(id);
+  async close(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<CreateResponse> {
+    const playerId = req.player.id;
+    const model = await this.trainingService.close(id, playerId);
 
     return new CreateResponse({
       statusCode: HttpStatus.OK,
@@ -83,7 +93,6 @@ export class TrainingController {
     description: 'Successfully retrieved player active trainings',
     type: () => CreateResponse,
   })
-  @UseInterceptors(CurrentPlayerInterceptor)
   @Get()
   async list(@Req() req: any): Promise<CreateResponse> {
     const playerId = req.player.id;
@@ -101,9 +110,17 @@ export class TrainingController {
     description: 'Successfully retrieved training result',
     type: () => CreateResponse,
   })
+  @ApiForbiddenResponse({
+    description: 'Forbidden',
+    type: () => ErrorResponse,
+  })
   @Get('/:id')
-  async getResult(@Param('id') id: string): Promise<CreateResponse> {
-    const result = await this.trainingService.getResult(id);
+  async getResult(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<CreateResponse> {
+    const playerId = req.player.id;
+    const result = await this.trainingService.getResult(id, playerId);
 
     return new CreateResponse({
       statusCode: HttpStatus.OK,

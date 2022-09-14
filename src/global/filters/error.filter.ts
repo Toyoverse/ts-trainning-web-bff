@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Logger,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ClassConstructor } from 'class-transformer';
 import { Response } from 'express';
@@ -16,11 +17,13 @@ import {
   ConstraintViolationError,
   NotFoundError,
 } from 'src/errors';
+import { ForbiddenError } from 'src/errors/forbidden.error';
 
 const errorsHttpExceptions = new Map<string, ClassConstructor<any>>([
   [ConstraintViolationError.name, BadRequestException],
   [NotFoundError.name, NotFoundException],
   [BadRequestError.name, BadRequestException],
+  [ForbiddenError.name, ForbiddenException],
 ]);
 
 @Catch(Error)

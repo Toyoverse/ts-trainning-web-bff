@@ -19,6 +19,8 @@ import { TrainingEventService } from 'src/training-event/services/training-event
 import { ToyoPersonaService } from 'src/external/toyo/services/toyo-persona.service';
 import { ToyoPersonaTrainingEventService } from 'src/training-event/services/toyo-persona-training-event.service';
 import { ListTrainingDto } from 'src/training/dto/list.dto';
+import { PlayerToyoService } from 'src/external/player/services/player-toyo.service';
+import { ForbiddenError } from 'src/errors/forbidden.error';
 
 @Injectable()
 export class TrainingServiceImpl implements TrainingService {
@@ -31,6 +33,8 @@ export class TrainingServiceImpl implements TrainingService {
     private toyoPersonaTrainingEventService: ToyoPersonaTrainingEventService,
     @Inject(playerDi.PLAYER_SERVICE)
     private playerService: PlayerService,
+    @Inject(playerDi.PLAYER_TOYO_SERVICE)
+    private playerToyoService: PlayerToyoService,
     @Inject(toyoDi.TOYO_SERVICE)
     private toyoService: ToyoService,
     @Inject(toyoDi.TOYO_PERSONA_SERVICE)
@@ -38,11 +42,17 @@ export class TrainingServiceImpl implements TrainingService {
   ) {}
 
   async start(dto: TrainingStartDto): Promise<TrainingModel> {
-    const player = await this.playerService.getPlayerById(dto.playerId);
-    const toyo = await this.toyoService.getToyoByTokenId(dto.toyoTokenId);
+    const toyos = await this.playerToyoService.getPlayerToyos(dto.playerId);
+
+    const [toyo] = toyos.filter((toyo) => toyo.tokenId === dto.toyoTokenId);
+    if (!toyo) {
+      throw new ForbiddenError(
+        'You cannot start a training of toyo that you do not have',
+      );
+    }
 
     const isToyoAlreadyTraining =
-      await this.trainingRepository.verifyIfToyoIsTraining(toyo);
+      await this.trainingRepository.verifyIfToyoIsTraining(toyo.id);
 
     if (isToyoAlreadyTraining) {
       throw new BadRequestException(
@@ -61,8 +71,8 @@ export class TrainingServiceImpl implements TrainingService {
     }
 
     const training = await this.trainingRepository.start(
-      toyo,
-      player,
+      toyo.id,
+      dto.playerId,
       currentTrainingEvent.id,
       config,
       dto.combination,
@@ -77,11 +87,18 @@ export class TrainingServiceImpl implements TrainingService {
     return training;
   }
 
-  async close(id: string): Promise<TrainingModel> {
+  async close(id: string, loggedPlayerId: string): Promise<TrainingModel> {
     const training = await this.trainingRepository.getTrainingById(id);
+    const playerId = training.get('player').id;
 
     if (!training || training.get('claimedAt') !== undefined) {
       throw new NotFoundException('Training not found or already claimed');
+    }
+
+    if (loggedPlayerId !== playerId) {
+      throw new ForbiddenError(
+        'You cannot close a training of toyo that you do not have',
+      );
     }
 
     const toyoId = training.get('toyo').id;
@@ -116,11 +133,19 @@ export class TrainingServiceImpl implements TrainingService {
     return data;
   }
 
-  async getResult(id: string): Promise<TrainingModel> {
+  async getResult(id: string, loggedPlayerId: string): Promise<TrainingModel> {
     const training = await this.trainingRepository.getTrainingById(id);
 
     if (!training) {
       throw new NotFoundException('Training not found');
+    }
+
+    const playerId = training.get('player').id;
+
+    if (loggedPlayerId !== playerId) {
+      throw new ForbiddenError(
+        'You cannot get the training result of toyo that you do not have',
+      );
     }
 
     const toyoId = training.get('toyo').id;

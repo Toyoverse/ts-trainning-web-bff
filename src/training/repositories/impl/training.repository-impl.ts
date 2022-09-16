@@ -197,6 +197,14 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   async resetTrainings(toyos: ToyoDto[]) {
     try {
       for (const toyo of toyos) {
+        const toyoOnChain = await this.getTokenOwnerEntityByTokenId(
+          toyo.tokenId,
+        );
+
+        if (!toyoOnChain[0].isStaked) {
+          return;
+        }
+
         const toyoObj = new Parse.Object(classes.TOYO, { id: toyo.id });
 
         const trainings = await this.getClosedTrainingByToyo(toyoObj);
@@ -255,6 +263,23 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     query.exists('claimedAt');
     query.exists('signature');
     return await query.findAll();
+  }
+
+  async getTokenOwnerEntityByTokenId(tokenId: string): Promise<any[]> {
+    const query = gql` {
+      tokenOwnerEntities(first: 500, where: {tokenId: "${tokenId}"}) {
+          typeId,
+          transactionHash,
+          tokenId,
+          currentOwner,
+          currentStaker,
+          isStaked
+      }
+    }
+  `;
+
+    const data: any = await request(this.THEGRAPH_URL, query);
+    return data?.tokenOwnerEntities;
   }
 
   async getClaimsByTokenId(tokenId: string): Promise<any[]> {

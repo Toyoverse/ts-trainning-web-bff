@@ -201,7 +201,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
           toyo.tokenId,
         );
 
-        if (toyoOnChain[0].isStaked) {
+        if (toyoOnChain[0]?.isStaked) {
           const toyoObj = new Parse.Object(classes.TOYO, { id: toyo.id });
 
           const trainings = await this.getClosedTrainingByToyo(toyoObj);

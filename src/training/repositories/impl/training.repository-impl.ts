@@ -201,28 +201,26 @@ export class TrainingRepositoryImpl implements TrainingRepository {
           toyo.tokenId,
         );
 
-        if (!toyoOnChain[0].isStaked) {
-          return;
-        }
+        if (toyoOnChain[0]?.isStaked) {
+          const toyoObj = new Parse.Object(classes.TOYO, { id: toyo.id });
 
-        const toyoObj = new Parse.Object(classes.TOYO, { id: toyo.id });
+          const trainings = await this.getClosedTrainingByToyo(toyoObj);
 
-        const trainings = await this.getClosedTrainingByToyo(toyoObj);
+          if (trainings.length > 0) {
+            const claims = await this.getClaimsByTokenId(toyo.tokenId);
 
-        if (trainings.length > 0) {
-          const claims = await this.getClaimsByTokenId(toyo.tokenId);
-
-          if (trainings.length !== claims.length) {
-            trainings.sort((a, b) => {
-              return (
-                new Date(b.get('updatedAt')).getTime() -
-                new Date(a.get('updatedAt')).getTime()
-              );
-            });
-            trainings[0].unset('claimedAt');
-            trainings[0].unset('signature');
-            trainings[0].set('isTraining', true);
-            await trainings[0].save();
+            if (trainings.length !== claims.length) {
+              trainings.sort((a, b) => {
+                return (
+                  new Date(b.get('updatedAt')).getTime() -
+                  new Date(a.get('updatedAt')).getTime()
+                );
+              });
+              trainings[0].unset('claimedAt');
+              trainings[0].unset('signature');
+              trainings[0].set('isTraining', true);
+              await trainings[0].save();
+            }
           }
         }
       }

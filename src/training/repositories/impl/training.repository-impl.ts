@@ -216,10 +216,13 @@ export class TrainingRepositoryImpl implements TrainingRepository {
                   new Date(a.get('updatedAt')).getTime()
                 );
               });
+
               trainings[0].unset('claimedAt');
               trainings[0].unset('signature');
               trainings[0].set('isTraining', true);
               await trainings[0].save();
+
+              await this.resetCardClaimByTrainingId(trainings[0]);
             }
           }
         }
@@ -393,5 +396,21 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
 
     return false;
+  }
+
+  private async resetCardClaimByTrainingId(
+    training: Parse.Object<Parse.Attributes>,
+  ): Promise<void> {
+    const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
+    trainingEventWinnerQuery.equalTo('training', training);
+    const trainingEventWinner = await trainingEventWinnerQuery.first();
+
+    if (trainingEventWinner) {
+      const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner', {
+        id: trainingEventWinner.id,
+      });
+
+      trainingEventWinnerObj.destroy();
+    }
   }
 }

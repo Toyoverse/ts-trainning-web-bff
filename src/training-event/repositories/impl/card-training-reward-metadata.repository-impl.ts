@@ -1,27 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as CryptoJS from 'crypto-js';
 import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
 import { CardTrainingRewardMetadataRepository } from '../card-training-reward-metadata.repository';
+import { NodeSSH } from 'node-ssh';
 
 @Injectable()
 export class CardTrainingRewardMetadataRepositoryImpl
   implements CardTrainingRewardMetadataRepository
 {
-  private readonly CARDS_META_DIRECTORY =
-    process.env.CARD_TRAINING_REWARD_METADATA_DIRECTORY;
+  async save(model: CardTrainingRewardModel): Promise<any> {
+    const sshClient = new NodeSSH();
 
-  async save(card: CardTrainingRewardModel): Promise<any> {
-    if (!fs.existsSync(this.CARDS_META_DIRECTORY)) {
-      fs.mkdirSync(this.CARDS_META_DIRECTORY, { recursive: true });
-    }
+    await sshClient.connect({
+      host: process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_HOST,
+      username: process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_USERNAME,
+      privateKeyPath:
+        process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_PRIVATE_KEY,
+    });
 
-    const fileName = `${card.cardCode}.json`;
+    const json = JSON.stringify(model);
 
-    const filePath = path.join(this.CARDS_META_DIRECTORY, fileName);
-    const jsonMetadata = JSON.stringify(card.getMetadata());
+    await sshClient.execCommand(`echo '${json}' > ${model.cardCode}.json`, {
+      cwd: process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_DIR,
+    });
 
-    fs.writeFileSync(filePath, jsonMetadata, 'utf-8');
+    sshClient.dispose();
   }
 }

@@ -107,4 +107,21 @@ export class ToyoPersonaTrainingEventServiceImpl
     }
     return new ToyoPersonaTrainingEventGetCurrentDto(model as any);
   }
+
+  async getToyoPersonaEventByEventId(
+    toyoPersonaId: string,
+    trainingEventId: string,
+  ): Promise<ToyoPersonaTrainingEventGetCurrentDto> {
+    const model = await this._repository.getByTrainingEventAndToyoPersona(
+      trainingEventId,
+      toyoPersonaId,
+    );
+
+    if (!model) {
+      throw new NotFoundError(
+        'There is no current training event for toyo persona',
+      );
+    }
+    return new ToyoPersonaTrainingEventGetCurrentDto(model as any);
+  }
 }

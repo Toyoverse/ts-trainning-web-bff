@@ -7,4 +7,8 @@ export interface ToyoPersonaTrainingEventService {
   getCurrent(
     toyoPersonaId: string,
   ): Promise<ToyoPersonaTrainingEventGetCurrentDto>;
+  getToyoPersonaEventByEventId(
+    toyoPersonaId: string,
+    trainingEventId: string,
+  ): Promise<ToyoPersonaTrainingEventGetCurrentDto>;
 }

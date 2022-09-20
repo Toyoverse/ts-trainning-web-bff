@@ -113,7 +113,10 @@ export class TrainingServiceImpl implements TrainingService {
     );
 
     const toyoPersonaTrainingEvent =
-      await this.toyoPersonaTrainingEventService.getCurrent(toyoPersona.id);
+      await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
+        toyoPersona.id,
+        trainingEvent.id,
+      );
 
     const model = await this.trainingRepository.close(
       training,
@@ -161,7 +164,10 @@ export class TrainingServiceImpl implements TrainingService {
     );
 
     const toyoPersonaTrainingEvent =
-      await this.toyoPersonaTrainingEventService.getCurrent(toyoPersona.id);
+      await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
+        toyoPersona.id,
+        trainingEvent.id,
+      );
 
     const model = await this.trainingRepository.getResult(
       training,

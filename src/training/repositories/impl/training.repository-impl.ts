@@ -222,7 +222,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
               trainings[0].set('isTraining', true);
               await trainings[0].save();
 
-              await this.resetCardClaimByTrainingId(toyoObj, trainings[0]);
+              await this.resetCardClaimByTrainingId(trainings[0], toyoObj);
             }
           }
         }

@@ -1,11 +1,11 @@
 import { ApiError, ApiErrorOptions } from './api-error';
 
-export class ForbiddenError extends ApiError {
-  name = 'ForbiddenError';
+export class InternalServerError extends ApiError {
+  name = 'InternalServerError';
 
   constructor(message?: string, options?: ApiErrorOptions) {
     super(message, options);
 
-    Object.setPrototypeOf(this, ForbiddenError.prototype);
+    Object.setPrototypeOf(this, InternalServerError.prototype);
   }
 }

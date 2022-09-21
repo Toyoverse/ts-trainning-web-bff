@@ -2,13 +2,13 @@ import {
   ArgumentsHost,
   BadRequestException,
   Catch,
-  ConsoleLogger,
   ExceptionFilter,
   HttpException,
-  HttpStatus,
   Logger,
   NotFoundException,
   ForbiddenException,
+  UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ClassConstructor } from 'class-transformer';
 import { Response } from 'express';
@@ -16,19 +16,24 @@ import {
   BadRequestError,
   ConstraintViolationError,
   NotFoundError,
+  ForbiddenError,
+  UnauthorizedError,
+  InternalServerError,
 } from 'src/errors';
-import { ForbiddenError } from 'src/errors/forbidden.error';
 
 const errorsHttpExceptions = new Map<string, ClassConstructor<any>>([
   [ConstraintViolationError.name, BadRequestException],
   [NotFoundError.name, NotFoundException],
   [BadRequestError.name, BadRequestException],
   [ForbiddenError.name, ForbiddenException],
+  [UnauthorizedError.name, UnauthorizedException],
+  [InternalServerError.name, InternalServerErrorException],
+  [Error.name, InternalServerErrorException],
 ]);
 
 @Catch(Error)
 export class ApiHttpErrorFilter implements ExceptionFilter {
-  logger = new Logger('ExceptionsHandler');
+  logger = new Logger();
 
   catch(err: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -39,20 +44,31 @@ export class ApiHttpErrorFilter implements ExceptionFilter {
       return;
     }
 
-    if (!errorsHttpExceptions.has(err.name)) {
-      response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Internal Server Error',
-      });
-      this.logger.error(err.message);
-      throw err;
-    }
-
     const HttpExceptionClass = errorsHttpExceptions.get(err.name);
     const httpException: HttpException = new HttpExceptionClass(err.message);
 
     response
       .status(httpException.getStatus())
       .json(httpException.getResponse());
+
+    this._logInternalServerErrors(err);
+  }
+
+  private _logInternalServerErrors(err: Error) {
+    if (process.env.NODE_ENV !== 'test') {
+      if (err instanceof InternalServerError) {
+        const ctx = err.ctx || 'ExceptionsHandler';
+        this.logger.error(
+          `${err.message}. Cause: ${err.cause}`,
+          err.stack,
+          ctx,
+        );
+      } else if (
+        err instanceof InternalServerErrorException ||
+        err instanceof Error
+      ) {
+        this.logger.error(err.message, err.stack);
+      }
+    }
   }
 }

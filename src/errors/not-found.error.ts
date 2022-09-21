@@ -1,8 +1,10 @@
-export class NotFoundError extends Error {
+import { ApiError, ApiErrorOptions } from './api-error';
+
+export class NotFoundError extends ApiError {
   name = 'NotFoundError';
 
-  constructor(message?: string) {
-    super(message);
+  constructor(message?: string, options?: ApiErrorOptions) {
+    super(message, options);
 
     Object.setPrototypeOf(this, NotFoundError.prototype);
   }

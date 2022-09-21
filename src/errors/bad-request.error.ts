@@ -1,8 +1,10 @@
-export class BadRequestError extends Error {
+import { ApiError, ApiErrorOptions } from './api-error';
+
+export class BadRequestError extends ApiError {
   name = 'BadRequestError';
 
-  constructor(message?: string) {
-    super(message);
+  constructor(message?: string, options?: ApiErrorOptions) {
+    super(message, options);
 
     Object.setPrototypeOf(this, BadRequestError.prototype);
   }

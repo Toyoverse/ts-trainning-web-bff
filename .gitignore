@@ -34,3 +34,20 @@ test-report.xml
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# FILES
+/files
+
+# AWS Settings
+/.aws
+.env.production
+/.serverless
+/_optimize
+/.build
+/.warmup
+
+# Private Keys
+keyrsa
+
+# TMP
+/tmp

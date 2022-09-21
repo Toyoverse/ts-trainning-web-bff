@@ -4,9 +4,7 @@ import * as Parse from 'parse/node';
 
 @Injectable()
 export class AppService {
-  constructor(
-    private configService: ConfigService,
-  ){
+  constructor(private configService: ConfigService) {
     this.ParseServerConfiguration();
   }
   getHello(): string {
@@ -16,7 +14,7 @@ export class AppService {
   /**
    * Function to configure ParseSDK
    */
-   private ParseServerConfiguration(): void {
+  private ParseServerConfiguration(): void {
     Parse.initialize(
       this.configService.get<string>('BACK4APP_APPLICATION_ID'),
       this.configService.get<string>('BACK4APP_JAVASCRIPT_KEY'),

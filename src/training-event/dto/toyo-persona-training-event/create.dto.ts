@@ -37,6 +37,8 @@ export class CardTrainingRewardCreateDto {
   @IsString()
   imageUrl: string;
 
+  cardCode?: string;
+
   constructor(attrs?: {
     name: string;
     description: string;
@@ -44,6 +46,7 @@ export class CardTrainingRewardCreateDto {
     type: string;
     cardId: string;
     imageUrl: string;
+    cardCode?: string;
   }) {
     if (attrs) {
       Object.assign(this, attrs);

@@ -22,6 +22,9 @@ export class CardTrainingRewardGetCurrentDto {
   @ApiProperty()
   cardId: string;
 
+  @ApiProperty()
+  cardCode?: string;
+
   constructor(attrs?: {
     id: string;
     name: string;
@@ -30,6 +33,7 @@ export class CardTrainingRewardGetCurrentDto {
     rotText: string;
     type: string;
     cardId: string;
+    cardCode?: string;
   }) {
     if (attrs) {
       this.id = attrs.id;
@@ -39,6 +43,7 @@ export class CardTrainingRewardGetCurrentDto {
       this.rotText = attrs.rotText;
       this.type = attrs.type;
       this.cardId = attrs.cardId;
+      this.cardCode = attrs.cardCode;
     }
   }
 }

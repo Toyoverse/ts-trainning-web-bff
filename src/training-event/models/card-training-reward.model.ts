@@ -6,6 +6,7 @@ export class CardTrainingRewardModel {
   rotText: string;
   type: string;
   cardId: string;
+  cardCode?: string;
 
   constructor(attrs?: {
     id?: string;
@@ -15,6 +16,7 @@ export class CardTrainingRewardModel {
     rotText: string;
     type: string;
     cardId: string;
+    cardCode?: string;
   }) {
     if (attrs) {
       this.id = attrs.id;
@@ -24,6 +26,7 @@ export class CardTrainingRewardModel {
       this.rotText = attrs.rotText;
       this.type = attrs.type;
       this.cardId = attrs.cardId;
+      this.cardCode = attrs.cardCode;
     }
   }
 

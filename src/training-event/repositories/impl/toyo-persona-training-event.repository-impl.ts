@@ -56,6 +56,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
     cardRewardParseObject.set('type', cardModel.type);
     cardRewardParseObject.set('cardId', cardModel.cardId);
     cardRewardParseObject.set('nftMetadata', cardModel.getMetadata());
+    cardRewardParseObject.set('cardCode', cardModel.cardCode);
 
     return cardRewardParseObject;
   }
@@ -94,6 +95,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
     const trainingEventParseObject = new Parse.Object(classes.TRAINING_EVENT, {
       id: trainingEventId,
     });
+
     parseQuery.equalTo('trainingEvent', trainingEventParseObject);
     parseQuery.equalTo('toyoPersona', toyoPersonaId);
 
@@ -132,6 +134,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
         cardId: cardRewardParseObject.get('cardId'),
         rotText: cardRewardParseObject.get('rotText'),
         type: cardRewardParseObject.get('type'),
+        cardCode: cardRewardParseObject.get('cardCode'),
       }),
     });
   }

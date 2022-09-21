@@ -1,68 +1,47 @@
 import * as Parse from 'parse/node';
 import { Eth } from 'web3-eth';
-import { soliditySha3 } from 'web3-utils';
+import { keccak256, toWei } from 'web3-utils';
 import { TrainingModel } from '../../../training/models/training.model';
 import { TrainingRepository } from '../training.repository';
 import { InternalServerErrorException } from '@nestjs/common';
-import { TrainingStartDto } from '../../../training/dto/start.dto';
+import { compareArrays, convertToTimestamp } from 'src/utils/general';
+import { BlowConfigModel } from 'src/training-event/models/training-event.model';
+import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
+import { classes } from 'src/config/back4app';
+import { request, gql } from 'graphql-request';
+import { ToyoDto } from 'src/external/player/dto/toyo.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
 
 export class TrainingRepositoryImpl implements TrainingRepository {
   private readonly DATABASE_CLASS = 'ToyoTraining';
-  private readonly TRAINING_DURATION_IN_HOURS = 8;
+  private readonly THEGRAPH_URL = process.env.THEGRAPH_URL;
 
-  async start(dto: TrainingStartDto): Promise<TrainingModel> {
+  async start(
+    toyoId: string,
+    playerId: string,
+    currentTrainingEventId: string,
+    config: BlowConfigModel,
+    combination: string[],
+  ): Promise<TrainingModel> {
     const training = new Parse.Object(this.DATABASE_CLASS);
+    const toyo = new Parse.Object(classes.TOYO, { id: toyoId });
+    const player = new Parse.Object(classes.PLAYERS, { id: playerId });
 
     try {
-      const toyoQuery = new Parse.Query('Toyo');
-      toyoQuery.equalTo('objectId', dto.toyoId);
-      const toyo = await toyoQuery.find();
-
-      console.log('Toyo', toyo);
-
-      if (toyo.length < 1) {
-        return null;
-      }
-
-      const trainingQuery = new Parse.Query(this.DATABASE_CLASS);
-      trainingQuery.equalTo('toyo', toyo[0]);
-      trainingQuery.equalTo('isTraining', true);
-      const isToyoAlreadyTraining = await trainingQuery.find();
-
-      if (isToyoAlreadyTraining.length > 0) {
-        return null;
-      }
+      const { startAt, endAt } = this.calculateTrainingDuration(config);
 
       const trainingEventQuery = new Parse.Query('TrainingEvent');
-      trainingEventQuery.equalTo('objectId', dto.trainingId);
-      const trainingEvent = await trainingEventQuery.find();
+      trainingEventQuery.equalTo('objectId', currentTrainingEventId);
+      const trainingEvent = await trainingEventQuery.first();
 
-      if (trainingEvent.length < 1 || !trainingEvent[0].get('isOngoing')) {
-        return null;
-      }
-
-      const playerQuery = new Parse.Query('Players');
-      playerQuery.equalTo('objectId', dto.playerId);
-      const player = await playerQuery.find();
-
-      if (player.length < 1) {
-        return null;
-      }
-
-      const now = new Date();
-      const endAt = new Date(
-        Date.now() + this.TRAINING_DURATION_IN_HOURS * (60 * 60 * 1000),
-      );
-
-      training.set('toyo', toyo[0]);
-      training.set('player', player[0]);
-      training.set('startAt', now);
+      training.set('toyo', toyo);
+      training.set('player', player);
+      training.set('startAt', startAt);
       training.set('endAt', endAt);
-      training.set('trainingEvent', trainingEvent[0]);
-      training.set('combination', dto.combination);
+      training.set('trainingEvent', trainingEvent);
+      training.set('combination', combination);
       training.set('isTraining', true);
 
       await training.save();
@@ -75,77 +54,139 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
-  async close(id: string): Promise<TrainingModel> {
-    try {
-      const trainingQuery = new Parse.Query(this.DATABASE_CLASS);
-      trainingQuery.equalTo('objectId', id);
-      const training = await trainingQuery.find();
+  async getResult(
+    training: Parse.Object<Parse.Attributes>,
+    trainingEvent: Parse.Object<Parse.Attributes>,
+    toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
+  ): Promise<TrainingModel> {
+    const toyoPersonaTrainingEventQuery = new Parse.Query(
+      'ToyoPersonaTrainingEvent',
+    );
+    toyoPersonaTrainingEventQuery.equalTo(
+      'objectId',
+      toyoPersonaTrainingEvent.id,
+    );
+    const toyoPersonaTrainingEventObj =
+      await toyoPersonaTrainingEventQuery.first();
 
-      if (training.length < 1 || training[0].get('claimedAt') !== undefined) {
-        return null;
+    const correctCombination: string[] = toyoPersonaTrainingEventObj.get(
+      'correctBlowsCombination',
+    );
+
+    const combinationCorrect = compareArrays(
+      training.get('combination'),
+      correctCombination,
+    );
+
+    const trainingModel = this.buildModelFromParseObject(training);
+
+    trainingModel.bond = trainingEvent.get('bondReward');
+
+    if (combinationCorrect.isCombinationCorrect) {
+      const hasWonCard: boolean = await this.checkIfToyoAlreadyHasCard(
+        trainingEvent,
+        training.get('toyo'),
+      );
+      if (!hasWonCard) {
+        trainingModel.card = toyoPersonaTrainingEvent.cardReward;
       }
+      trainingModel.bond =
+        trainingEvent.get('bondReward') + trainingEvent.get('bonusBondReward');
+    }
 
-      const trainingToyo = training[0].get('toyo').id;
+    trainingModel.isCombinationCorrect =
+      combinationCorrect.isCombinationCorrect;
+    trainingModel.combinationResult = combinationCorrect;
 
-      const toyoQuery = new Parse.Query('Toyo');
-      toyoQuery.equalTo('objectId', trainingToyo);
-      const toyo = await toyoQuery.find();
+    return trainingModel;
+  }
 
-      const toyoId = toyo[0].id;
+  async close(
+    training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
+    trainingEvent: Parse.Object<Parse.Attributes>,
+    toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
+  ): Promise<TrainingModel> {
+    try {
+      const hasWonCard: boolean = await this.checkIfToyoAlreadyHasCard(
+        trainingEvent,
+        training.get('toyo'),
+      );
 
-      const trainingEventWinner = new Parse.Query('TrainingEventWinner');
-      trainingEventWinner.equalTo('toyo', toyo[0]);
-      const toyoWinner = await trainingEventWinner.find();
-
-      const persona = toyo[0].get('toyoPersonaOrigin').id;
-      const toyoPersonaQuery = new Parse.Query('ToyoPersona');
-      toyoPersonaQuery.equalTo('objectId', persona);
-      const resultPersona = await toyoPersonaQuery.find();
-
-      const event = training[0].get('trainingEvent').id;
-      const trainingEventQuery = new Parse.Query('TrainingEvent');
-      trainingEventQuery.equalTo('objectId', event);
-      const resultEvent = await trainingEventQuery.find();
-
-      const toyoPersonaTrainingEvent = new Parse.Query(
+      const toyoPersonaTrainingEventQuery = new Parse.Query(
         'ToyoPersonaTrainingEvent',
       );
-      toyoPersonaTrainingEvent.equalTo('toyoPersona', resultPersona[0].id);
-      toyoPersonaTrainingEvent.equalTo('trainingEvent', resultEvent[0]);
-      const card = await toyoPersonaTrainingEvent.find();
+      toyoPersonaTrainingEventQuery.equalTo(
+        'objectId',
+        toyoPersonaTrainingEvent.id,
+      );
+      const toyoPersonaTrainingEventObj =
+        await toyoPersonaTrainingEventQuery.first();
 
-      const bondReward = resultEvent[0].get('bondReward');
+      const correctCombination: string[] = toyoPersonaTrainingEventObj.get(
+        'correctBlowsCombination',
+      );
+
+      const compareCombination = compareArrays(
+        training.get('combination'),
+        correctCombination,
+      );
+
+      const card = toyoPersonaTrainingEventObj.get('cardReward');
+
+      const cardTrainingRewardQuery = new Parse.Query('CardTrainingReward');
+      cardTrainingRewardQuery.equalTo('objectId', card.id);
+      const cardTrainingRewardObj = await cardTrainingRewardQuery.first();
+
+      const bondReward: number = compareCombination.isCombinationCorrect
+        ? trainingEvent.get('bondReward') + trainingEvent.get('bonusBondReward')
+        : trainingEvent.get('bondReward');
+
+      const bondToString = bondReward.toString();
+
+      const formattedBondAmount = toWei(bondToString, 'ether');
 
       let signature: string;
-      if (toyoWinner.length > 0) {
-        signature = this.generateTrainingSignature(toyoId, bondReward, '');
+      if (hasWonCard || !compareCombination.isCombinationCorrect) {
+        signature = this.generateTrainingSignature(
+          training.id,
+          toyo.get('tokenId'),
+          formattedBondAmount,
+          '',
+        );
       } else {
         signature = this.generateTrainingSignature(
-          toyoId,
-          bondReward,
-          card[0].id,
+          training.id,
+          toyo.get('tokenId'),
+          formattedBondAmount,
+          cardTrainingRewardObj.get('cardCode'),
         );
-      }
 
-      const now = new Date();
-
-      training[0].set('claimedAt', now);
-      training[0].set('signature', signature);
-      training[0].set('isTraining', false);
-
-      const savedTraining = await training[0].save();
-
-      if (toyoWinner.length === 0) {
         const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner');
 
-        trainingEventWinnerObj.set('toyo', toyo[0]);
-        trainingEventWinnerObj.set('training', training[0]);
-        trainingEventWinnerObj.set('trainingEvent', resultEvent[0]);
+        trainingEventWinnerObj.set('toyo', toyo);
+        trainingEventWinnerObj.set('training', training);
+        trainingEventWinnerObj.set('trainingEvent', trainingEvent);
+        trainingEventWinnerObj.set('cardReward', card);
 
         await trainingEventWinnerObj.save();
       }
 
-      const trainingModel = this.buildModelFromParseObject(savedTraining);
+      const now = new Date();
+
+      training.set('claimedAt', now);
+      training.set('signature', signature);
+      training.set('isTraining', false);
+
+      const savedTraining = await training.save();
+      const trainingModel = this.buildModelFromParseObject(savedTraining, {
+        bond: trainingEvent.get('bondReward'),
+        bondFormatted: formattedBondAmount,
+      });
+
+      if (!hasWonCard && compareCombination.isCombinationCorrect) {
+        trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+      }
 
       return trainingModel;
     } catch (e) {
@@ -153,16 +194,54 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
-  async list(playerId: string): Promise<TrainingModel[]> {
+  async resetTrainings(toyos: ToyoDto[]) {
     try {
-      const playerQuery = new Parse.Query('Players');
-      playerQuery.equalTo('objectId', playerId);
-      const player = await playerQuery.find();
+      for (const toyo of toyos) {
+        const toyoOnChain = await this.getTokenOwnerEntityByTokenId(
+          toyo.tokenId,
+        );
+
+        if (toyoOnChain[0]?.isStaked) {
+          const toyoObj = new Parse.Object(classes.TOYO, { id: toyo.id });
+
+          const trainings = await this.getClosedTrainingByToyo(toyoObj);
+
+          if (trainings.length > 0) {
+            const claims = await this.getClaimsByTokenId(toyo.tokenId);
+
+            if (trainings.length !== claims.length) {
+              trainings.sort((a, b) => {
+                return (
+                  new Date(b.get('updatedAt')).getTime() -
+                  new Date(a.get('updatedAt')).getTime()
+                );
+              });
+              trainings[0].unset('claimedAt');
+              trainings[0].unset('signature');
+              trainings[0].set('isTraining', true);
+              await trainings[0].save();
+            }
+          }
+        }
+      }
+    } catch (e) {
+      throw new InternalServerErrorException(e);
+    }
+    return;
+  }
+
+  async list(
+    player: Parse.Object<Parse.Attributes>,
+    toyos: ToyoDto[],
+  ): Promise<TrainingModel[]> {
+    try {
+      await this.resetTrainings(toyos);
 
       const query = new Parse.Query(this.DATABASE_CLASS);
       query.equalTo('claimedAt', undefined);
-      query.equalTo('player', player[0]);
-      const trainingList = await query.find();
+      query.equalTo('player', player);
+      query.include('toyo');
+      const trainingList = await query.findAll();
 
       const formattedArray = trainingList.map((e) => {
         return this.buildModelFromParseObject(e);
@@ -174,30 +253,145 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
+  async getClosedTrainingByToyo(
+    toyo: Parse.Object<Parse.Attributes>,
+  ): Promise<Parse.Object<Parse.Attributes>[]> {
+    const query = new Parse.Query(this.DATABASE_CLASS);
+    query.equalTo('toyo', toyo);
+    query.exists('claimedAt');
+    query.exists('signature');
+    return await query.findAll();
+  }
+
+  async getTokenOwnerEntityByTokenId(tokenId: string): Promise<any[]> {
+    const query = gql` {
+      tokenOwnerEntities(first: 500, where: {tokenId: "${tokenId}"}) {
+          typeId,
+          transactionHash,
+          tokenId,
+          currentOwner,
+          currentStaker,
+          isStaked
+      }
+    }
+  `;
+
+    const data: any = await request(this.THEGRAPH_URL, query);
+    return data?.tokenOwnerEntities;
+  }
+
+  async getClaimsByTokenId(tokenId: string): Promise<any[]> {
+    const query = gql`
+      {
+        tokenClaimedEntities(first: 1000, where: {tokenId: "${tokenId.toString()}"}) {
+          tokenId,
+          id,
+          cardCode,
+          bondAmount
+        }
+      }
+    `;
+
+    const data: any = await request(this.THEGRAPH_URL, query);
+    return data?.tokenClaimedEntities;
+  }
+
+  async verifyIfToyoIsTraining(toyoId: string): Promise<boolean> {
+    const trainingQuery = new Parse.Query(this.DATABASE_CLASS);
+
+    const toyoParseObject = new Parse.Object(classes.TOYO, {
+      id: toyoId,
+    });
+
+    trainingQuery.equalTo('toyo', toyoParseObject);
+    trainingQuery.equalTo('isTraining', true);
+    const toyoList = await trainingQuery.find();
+
+    if (toyoList.length > 0) {
+      return true;
+    }
+
+    return false;
+  }
+
+  async getTrainingById(
+    trainingId: string,
+  ): Promise<Parse.Object<Parse.Attributes>> {
+    const trainingQuery = new Parse.Query(this.DATABASE_CLASS);
+    trainingQuery.equalTo('objectId', trainingId);
+    const training = await trainingQuery.first();
+
+    if (!training) {
+      return undefined;
+    }
+
+    return training;
+  }
+
   private buildModelFromParseObject(
     object: Parse.Object<Parse.Attributes>,
+    bondReward?: { bond: number; bondFormatted: string },
   ): TrainingModel {
+    const startAt = convertToTimestamp(object.get('startAt'));
+    const endAt = convertToTimestamp(object.get('endAt'));
+    const claimedAt = convertToTimestamp(object.get('claimedAt'));
+
     return new TrainingModel({
-      toyo: object.get('toyo'),
-      startAt: object.get('startAt'),
-      endAt: object.get('endAt'),
-      claimedAt: object.get('claimedAt'),
-      training: object.get('trainingEvent'),
+      id: object.id,
+      startAt,
+      endAt,
+      claimedAt,
+      toyoTokenId: object.get('toyo').get('tokenId'),
       signature: object.get('signature'),
       combination: object.get('combination'),
+      bond: bondReward?.bondFormatted || bondReward?.bond,
     });
   }
 
   private generateTrainingSignature(
-    toyoId: string,
-    bondAmount: number,
+    trainingId: string,
+    toyoTokenId: string,
+    bondAmount: string,
     cardCode: string,
   ): string {
     const eth: Eth = new Web3Eth();
 
-    const message = soliditySha3(toyoId + bondAmount + cardCode);
+    const message = keccak256(
+      eth.abi.encodeParameters(
+        ['string', 'uint256', 'uint256', 'string'],
+        [trainingId, toyoTokenId, bondAmount, cardCode],
+      ),
+    );
+
     const { signature } = eth.accounts.sign(message, process.env.PRIVATE_KEY);
 
     return signature;
+  }
+
+  private calculateTrainingDuration(config: BlowConfigModel): {
+    startAt: Date;
+    endAt: Date;
+  } {
+    const trainingDuration = config.duration / 60;
+    const startAt = new Date();
+    const endAt = new Date(Date.now() + trainingDuration * (60 * 60 * 1000));
+
+    return { startAt, endAt };
+  }
+
+  private async checkIfToyoAlreadyHasCard(
+    training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
+  ): Promise<boolean> {
+    const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
+    trainingEventWinnerQuery.equalTo('toyo', toyo);
+    trainingEventWinnerQuery.equalTo('trainingEvent', training);
+    const trainingEventWinner = await trainingEventWinnerQuery.find();
+
+    if (trainingEventWinner.length > 0) {
+      return true;
+    }
+
+    return false;
   }
 }

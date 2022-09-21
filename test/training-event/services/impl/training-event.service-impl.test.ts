@@ -13,6 +13,7 @@ describe('Training event service tests', () => {
   const trainingEventRepository = {
     save: jest.fn(),
     getCurrent: jest.fn(),
+    isDatesConflicting: jest.fn(),
   };
 
   const trainingBlowService = {
@@ -23,6 +24,10 @@ describe('Training event service tests', () => {
     trainingEventRepository,
     trainingBlowService as any,
   );
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
 
   describe('Create training events', () => {
     test('Given valid request then save training event', async () => {
@@ -108,6 +113,43 @@ describe('Training event service tests', () => {
 
       const t = async () => await trainingEventService.create(dto);
       await expect(t).rejects.toThrow(unexpectedError);
+    });
+
+    test('When date is conflicting then throw constraint violation exception', async () => {
+      const now = new Date();
+
+      const dto = new TrainingEventCreateDto({
+        name: 'Training Event',
+        startAt: now,
+        endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
+        isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
+        inTrainingMessage: 'Training Doge',
+        losesMessage: 'Sorry, you lost',
+        rewardMessage: 'You won, congratulations',
+        blows: ['1', '2', '3'],
+        blowsConfig: [
+          new BlowConfigCreateDto({ duration: 3, qty: 5 }),
+          new BlowConfigCreateDto({ duration: 4, qty: 6 }),
+        ],
+      });
+
+      when(trainingEventRepository.isDatesConflicting)
+        .calledWith(dto.startAt, dto.endAt)
+        .mockResolvedValue(true);
+
+      const t = async () => await trainingEventService.create(dto);
+
+      await expect(t).rejects.toThrow(
+        new ConstraintViolationError(
+          'There is already an event scheduled in this period',
+        ),
+      );
     });
   });
 

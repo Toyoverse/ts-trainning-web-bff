@@ -6,15 +6,17 @@ import { TrainingRepository } from '../training.repository';
 import { InternalServerErrorException } from '@nestjs/common';
 import { compareArrays, convertToTimestamp } from 'src/utils/general';
 import { BlowConfigModel } from 'src/training-event/models/training-event.model';
-import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 import { classes } from 'src/config/back4app';
+import { request, gql } from 'graphql-request';
+import { ToyoDto } from 'src/external/player/dto/toyo.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
 
 export class TrainingRepositoryImpl implements TrainingRepository {
   private readonly DATABASE_CLASS = 'ToyoTraining';
+  private readonly THEGRAPH_URL = process.env.THEGRAPH_URL;
 
   async start(
     toyoId: string,
@@ -54,7 +56,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
   async getResult(
     training: Parse.Object<Parse.Attributes>,
-    currentTrainingEvent: TrainingEventGetCurrentDto,
+    trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel> {
     const toyoPersonaTrainingEventQuery = new Parse.Query(
@@ -78,10 +80,20 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
     const trainingModel = this.buildModelFromParseObject(training);
 
+    trainingModel.bond = trainingEvent.get('bondReward');
+
     if (combinationCorrect.isCombinationCorrect) {
-      trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+      const hasWonCard: boolean = await this.checkIfToyoAlreadyHasCard(
+        trainingEvent,
+        training.get('toyo'),
+      );
+      if (!hasWonCard) {
+        trainingModel.card = toyoPersonaTrainingEvent.cardReward;
+      }
+      trainingModel.bond =
+        trainingEvent.get('bondReward') + trainingEvent.get('bonusBondReward');
     }
-    trainingModel.bond = currentTrainingEvent.bondReward;
+
     trainingModel.isCombinationCorrect =
       combinationCorrect.isCombinationCorrect;
     trainingModel.combinationResult = combinationCorrect;
@@ -92,18 +104,14 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   async close(
     training: Parse.Object<Parse.Attributes>,
     toyo: Parse.Object<Parse.Attributes>,
-    currentTrainingEvent: TrainingEventGetCurrentDto,
+    trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel> {
     try {
-      const trainingEventQuery = new Parse.Query('TrainingEvent');
-      trainingEventQuery.equalTo('objectId', currentTrainingEvent.id);
-      const trainingEvent = await trainingEventQuery.first();
-
-      const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
-      trainingEventWinnerQuery.equalTo('toyo', toyo);
-      trainingEventWinnerQuery.equalTo('training', training);
-      const trainingEventWinner = await trainingEventWinnerQuery.find();
+      const hasWonCard: boolean = await this.checkIfToyoAlreadyHasCard(
+        trainingEvent,
+        training.get('toyo'),
+      );
 
       const toyoPersonaTrainingEventQuery = new Parse.Query(
         'ToyoPersonaTrainingEvent',
@@ -130,15 +138,16 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       cardTrainingRewardQuery.equalTo('objectId', card.id);
       const cardTrainingRewardObj = await cardTrainingRewardQuery.first();
 
-      const bondToString = currentTrainingEvent.bondReward.toString();
+      const bondReward: number = compareCombination.isCombinationCorrect
+        ? trainingEvent.get('bondReward') + trainingEvent.get('bonusBondReward')
+        : trainingEvent.get('bondReward');
+
+      const bondToString = bondReward.toString();
 
       const formattedBondAmount = toWei(bondToString, 'ether');
 
       let signature: string;
-      if (
-        trainingEventWinner.length > 0 ||
-        !compareCombination.isCombinationCorrect
-      ) {
+      if (hasWonCard || !compareCombination.isCombinationCorrect) {
         signature = this.generateTrainingSignature(
           training.id,
           toyo.get('tokenId'),
@@ -171,14 +180,11 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       const savedTraining = await training.save();
       const trainingModel = this.buildModelFromParseObject(savedTraining, {
-        bond: currentTrainingEvent.bondReward,
+        bond: trainingEvent.get('bondReward'),
         bondFormatted: formattedBondAmount,
       });
 
-      if (
-        trainingEventWinner.length === 0 &&
-        compareCombination.isCombinationCorrect
-      ) {
+      if (!hasWonCard && compareCombination.isCombinationCorrect) {
         trainingModel.card = toyoPersonaTrainingEvent.cardReward;
       }
 
@@ -188,13 +194,55 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
-  async list(player: Parse.Object<Parse.Attributes>): Promise<TrainingModel[]> {
+  async resetTrainings(toyos: ToyoDto[]) {
     try {
+      for (const toyo of toyos) {
+        const toyoOnChain = await this.getTokenOwnerEntityByTokenId(
+          toyo.tokenId,
+        );
+
+        if (toyoOnChain[0]?.isStaked) {
+          const toyoObj = new Parse.Object(classes.TOYO, { id: toyo.id });
+
+          const trainings = await this.getClosedTrainingByToyo(toyoObj);
+
+          if (trainings.length > 0) {
+            const claims = await this.getClaimsByTokenId(toyo.tokenId);
+
+            if (trainings.length !== claims.length) {
+              trainings.sort((a, b) => {
+                return (
+                  new Date(b.get('updatedAt')).getTime() -
+                  new Date(a.get('updatedAt')).getTime()
+                );
+              });
+              trainings[0].unset('claimedAt');
+              trainings[0].unset('signature');
+              trainings[0].set('isTraining', true);
+              await trainings[0].save();
+            }
+          }
+        }
+      }
+    } catch (e) {
+      throw new InternalServerErrorException(e);
+    }
+    return;
+  }
+
+  async list(playerId: string, toyos: ToyoDto[]): Promise<TrainingModel[]> {
+    try {
+      await this.resetTrainings(toyos);
+
+      const playerParseObject = new Parse.Object(classes.PLAYERS, {
+        id: playerId,
+      });
+
       const query = new Parse.Query(this.DATABASE_CLASS);
       query.equalTo('claimedAt', undefined);
-      query.equalTo('player', player);
+      query.equalTo('player', playerParseObject);
       query.include('toyo');
-      const trainingList = await query.find();
+      const trainingList = await query.findAll();
 
       const formattedArray = trainingList.map((e) => {
         return this.buildModelFromParseObject(e);
@@ -204,6 +252,49 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     } catch (e) {
       throw new InternalServerErrorException(e);
     }
+  }
+
+  async getClosedTrainingByToyo(
+    toyo: Parse.Object<Parse.Attributes>,
+  ): Promise<Parse.Object<Parse.Attributes>[]> {
+    const query = new Parse.Query(this.DATABASE_CLASS);
+    query.equalTo('toyo', toyo);
+    query.exists('claimedAt');
+    query.exists('signature');
+    return await query.findAll();
+  }
+
+  async getTokenOwnerEntityByTokenId(tokenId: string): Promise<any[]> {
+    const query = gql` {
+      tokenOwnerEntities(first: 500, where: {tokenId: "${tokenId}"}) {
+          typeId,
+          transactionHash,
+          tokenId,
+          currentOwner,
+          currentStaker,
+          isStaked
+      }
+    }
+  `;
+
+    const data: any = await request(this.THEGRAPH_URL, query);
+    return data?.tokenOwnerEntities;
+  }
+
+  async getClaimsByTokenId(tokenId: string): Promise<any[]> {
+    const query = gql`
+      {
+        tokenClaimedEntities(first: 1000, where: {tokenId: "${tokenId.toString()}"}) {
+          tokenId,
+          id,
+          cardCode,
+          bondAmount
+        }
+      }
+    `;
+
+    const data: any = await request(this.THEGRAPH_URL, query);
+    return data?.tokenClaimedEntities;
   }
 
   async verifyIfToyoIsTraining(toyoId: string): Promise<boolean> {
@@ -287,5 +378,21 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     const endAt = new Date(Date.now() + trainingDuration * (60 * 60 * 1000));
 
     return { startAt, endAt };
+  }
+
+  private async checkIfToyoAlreadyHasCard(
+    training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
+  ): Promise<boolean> {
+    const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
+    trainingEventWinnerQuery.equalTo('toyo', toyo);
+    trainingEventWinnerQuery.equalTo('trainingEvent', training);
+    const trainingEventWinner = await trainingEventWinnerQuery.find();
+
+    if (trainingEventWinner.length > 0) {
+      return true;
+    }
+
+    return false;
   }
 }

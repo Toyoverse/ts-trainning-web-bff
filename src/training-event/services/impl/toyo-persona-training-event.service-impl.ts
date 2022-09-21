@@ -55,7 +55,8 @@ export class ToyoPersonaTrainingEventServiceImpl
 
     const { id, cardReward } = await this._repository.save(model);
 
-    await this._createCardMetadata(cardReward);
+    //Metadata not created in production transaction
+    // await this._createCardMetadata(cardReward);
 
     return id;
   }
@@ -94,6 +95,23 @@ export class ToyoPersonaTrainingEventServiceImpl
 
     const model = await this._repository.getByTrainingEventAndToyoPersona(
       trainingEvent.id,
+      toyoPersonaId,
+    );
+
+    if (!model) {
+      throw new NotFoundError(
+        'There is no current training event for toyo persona',
+      );
+    }
+    return new ToyoPersonaTrainingEventGetCurrentDto(model as any);
+  }
+
+  async getToyoPersonaEventByEventId(
+    toyoPersonaId: string,
+    trainingEventId: string,
+  ): Promise<ToyoPersonaTrainingEventGetCurrentDto> {
+    const model = await this._repository.getByTrainingEventAndToyoPersona(
+      trainingEventId,
       toyoPersonaId,
     );
 

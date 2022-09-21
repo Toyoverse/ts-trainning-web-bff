@@ -33,8 +33,6 @@ export class TrainingServiceImpl implements TrainingService {
     private trainingEventService: TrainingEventService,
     @Inject(trainingEventDi.TOYO_PERSONA_TRAINING_EVENT_SERVICE)
     private toyoPersonaTrainingEventService: ToyoPersonaTrainingEventService,
-    @Inject(playerDi.PLAYER_SERVICE)
-    private playerService: PlayerService,
     @Inject(playerDi.PLAYER_TOYO_SERVICE)
     private playerToyoService: PlayerToyoService,
     @Inject(toyoDi.TOYO_SERVICE)
@@ -122,15 +120,20 @@ export class TrainingServiceImpl implements TrainingService {
         toyo.get('toyoPersonaOrigin').id,
       );
 
-      const currentTrainingEvent = await this.trainingEventService.getCurrent();
+      const trainingEvent = await this.trainingEventService.getById(
+        training.get('trainingEvent').id,
+      );
 
       const toyoPersonaTrainingEvent =
-        await this.toyoPersonaTrainingEventService.getCurrent(toyoPersona.id);
+        await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
+          toyoPersona.id,
+          trainingEvent.id,
+        );
 
       const model = await this.trainingRepository.close(
         training,
         toyo,
-        currentTrainingEvent,
+        trainingEvent,
         toyoPersonaTrainingEvent,
       );
 
@@ -148,10 +151,8 @@ export class TrainingServiceImpl implements TrainingService {
   }
 
   async list(playerId: string): Promise<ListTrainingDto[]> {
-    const player = await this.playerService.getPlayerById(playerId);
-
-    const data = await this.trainingRepository.list(player);
-
+    const toyos = await this.playerToyoService.getPlayerToyos(playerId);
+    const data = await this.trainingRepository.list(playerId, toyos);
     return data;
   }
 
@@ -178,20 +179,25 @@ export class TrainingServiceImpl implements TrainingService {
         toyo.get('toyoPersonaOrigin').id,
       );
 
-      const currentTrainingEvent = await this.trainingEventService.getCurrent();
+      const trainingEvent = await this.trainingEventService.getById(
+        training.get('trainingEvent').id,
+      );
 
       const toyoPersonaTrainingEvent =
-        await this.toyoPersonaTrainingEventService.getCurrent(toyoPersona.id);
+        await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
+          toyoPersona.id,
+          trainingEvent.id,
+        );
 
       const model = await this.trainingRepository.getResult(
         training,
-        currentTrainingEvent,
+        trainingEvent,
         toyoPersonaTrainingEvent,
       );
 
       return model;
     } catch (e) {
-      if (e.name === Error.name || e.name === InternalServerError.name) {
+      if (e instanceof InternalServerError || e instanceof Error) {
         throw new InternalServerError(
           `Internal server error found when tried to get result for training ${id} owned by player ${loggedPlayerId} `,
           { cause: e.message, ctx: TrainingServiceImpl.name },

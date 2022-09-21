@@ -6,7 +6,6 @@ import {
 } from 'src/training-event/models/training-event.model';
 import { TrainingEventRepositoryImpl } from 'src/training-event/repositories/impl/training-event.repository-impl';
 import { classes } from 'src/config/back4app';
-import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 
 jest.useFakeTimers().setSystemTime(new Date('2022-08-09'));
 
@@ -202,6 +201,82 @@ describe('Training event repository tests', () => {
       mockTrainingEventParseQuery.first.mockResolvedValue(undefined);
       const model = await repository.getCurrent();
       expect(model).toEqual(undefined);
+    });
+  });
+
+  describe('isDatesConflicting', () => {
+    test('Returns false when dates conflicts', async () => {
+      const startDate = new Date(2022, 2, 2);
+      const endDate = new Date(2022, 2, 9);
+
+      const mockParseQueryConstructor = jest.mocked(Parse.Query);
+      const mockParseQueryOrConstructor = jest.mocked(Parse.Query.or);
+
+      const mockParseQuery = {
+        count: jest.fn(),
+      };
+
+      const mockStartDateInAnotherEventPeriodQuery = {
+        lessThanOrEqualTo: jest.fn(),
+        greaterThanOrEqualTo: jest.fn(),
+      };
+      const mockEndDateInAnotherEventPeriodQuery = {
+        lessThanOrEqualTo: jest.fn(),
+        greaterThanOrEqualTo: jest.fn(),
+      };
+
+      const mockWrapsAnotherEventPeriodQuery = {
+        lessThanOrEqualTo: jest.fn(),
+        greaterThanOrEqualTo: jest.fn(),
+      };
+
+      mockParseQueryConstructor.mockReturnValueOnce(
+        mockStartDateInAnotherEventPeriodQuery as any,
+      );
+      mockParseQueryConstructor.mockReturnValueOnce(
+        mockEndDateInAnotherEventPeriodQuery as any,
+      );
+      mockParseQueryConstructor.mockReturnValueOnce(
+        mockWrapsAnotherEventPeriodQuery as any,
+      );
+
+      mockParseQueryOrConstructor.mockReturnValue(mockParseQuery as any);
+
+      mockParseQuery.count.mockResolvedValue(1);
+
+      const result = await repository.isDatesConflicting(startDate, endDate);
+
+      expect(
+        mockStartDateInAnotherEventPeriodQuery.lessThanOrEqualTo,
+      ).toBeCalledWith('startAt', startDate);
+
+      expect(
+        mockStartDateInAnotherEventPeriodQuery.greaterThanOrEqualTo,
+      ).toBeCalledWith('endAt', startDate);
+
+      expect(
+        mockEndDateInAnotherEventPeriodQuery.lessThanOrEqualTo,
+      ).toBeCalledWith('startAt', endDate);
+
+      expect(
+        mockEndDateInAnotherEventPeriodQuery.greaterThanOrEqualTo,
+      ).toBeCalledWith('endAt', endDate);
+
+      expect(
+        mockWrapsAnotherEventPeriodQuery.greaterThanOrEqualTo,
+      ).toBeCalledWith('startAt', startDate);
+
+      expect(mockWrapsAnotherEventPeriodQuery.lessThanOrEqualTo).toBeCalledWith(
+        'endAt',
+        endDate,
+      );
+
+      expect(mockParseQueryOrConstructor).toBeCalledWith(
+        mockStartDateInAnotherEventPeriodQuery,
+        mockEndDateInAnotherEventPeriodQuery,
+        mockWrapsAnotherEventPeriodQuery,
+      );
+      expect(result).toBeTruthy();
     });
   });
 });

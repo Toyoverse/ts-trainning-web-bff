@@ -222,7 +222,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
               trainings[0].set('isTraining', true);
               await trainings[0].save();
 
-              await this.resetCardClaimByTrainingId(trainings[0]);
+              await this.resetCardClaimByTrainingId(toyoObj, trainings[0]);
             }
           }
         }
@@ -400,8 +400,10 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
   private async resetCardClaimByTrainingId(
     training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
   ): Promise<void> {
     const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
+    trainingEventWinnerQuery.equalTo('toyo', toyo);
     trainingEventWinnerQuery.equalTo('training', training);
     const trainingEventWinner = await trainingEventWinnerQuery.first();
 

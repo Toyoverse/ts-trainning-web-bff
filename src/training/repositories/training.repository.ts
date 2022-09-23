@@ -15,13 +15,18 @@ export interface TrainingRepository {
     training: Parse.Object<Parse.Attributes>,
     toyo: Parse.Object<Parse.Attributes>,
     trainingEvent: Parse.Object<Parse.Attributes>,
-    toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel>;
-  list(player: string, toyos: ToyoDto[]): Promise<TrainingModel[]>;
+  list(player: string): Promise<TrainingModel[]>;
   verifyIfToyoIsTraining(toyoId: string): Promise<boolean>;
   getTrainingById(trainingId: string): Promise<Parse.Object<Parse.Attributes>>;
   getResult(
     training: Parse.Object<Parse.Attributes>,
+    trainingEvent: Parse.Object<Parse.Attributes>,
+    toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
+  ): Promise<TrainingModel>;
+  getSignature(
+    training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
     trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel>;

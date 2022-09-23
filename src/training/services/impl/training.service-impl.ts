@@ -98,7 +98,10 @@ export class TrainingServiceImpl implements TrainingService {
     }
   }
 
-  async close(id: string, loggedPlayerId: string): Promise<TrainingModel> {
+  async getSignature(
+    id: string,
+    loggedPlayerId: string,
+  ): Promise<TrainingModel> {
     try {
       const training = await this.trainingRepository.getTrainingById(id);
       const playerId = training.get('player').id;
@@ -130,7 +133,7 @@ export class TrainingServiceImpl implements TrainingService {
           trainingEvent.id,
         );
 
-      const model = await this.trainingRepository.close(
+      const model = await this.trainingRepository.getSignature(
         training,
         toyo,
         trainingEvent,
@@ -150,9 +153,49 @@ export class TrainingServiceImpl implements TrainingService {
     }
   }
 
+  async close(id: string, loggedPlayerId: string): Promise<TrainingModel> {
+    try {
+      const training = await this.trainingRepository.getTrainingById(id);
+      const playerId = training.get('player').id;
+
+      if (!training || training.get('claimedAt') !== undefined) {
+        throw new NotFoundException('Training not found or already claimed');
+      }
+
+      if (loggedPlayerId !== playerId) {
+        throw new ForbiddenError(
+          'You cannot close a training of toyo that you do not have',
+        );
+      }
+
+      const toyoId = training.get('toyo').id;
+      const toyo = await this.toyoService.getToyoById(toyoId);
+
+      const trainingEvent = await this.trainingEventService.getById(
+        training.get('trainingEvent').id,
+      );
+
+      const model = await this.trainingRepository.close(
+        training,
+        toyo,
+        trainingEvent,
+      );
+
+      return model;
+    } catch (e) {
+      if (e.name === Error.name || e.name === InternalServerError.name) {
+        throw new InternalServerError(
+          `Internal server error found when tried to close the training ${id} onwed by player ${loggedPlayerId} `,
+          { cause: e.message, ctx: TrainingServiceImpl.name },
+        );
+      }
+
+      throw e;
+    }
+  }
+
   async list(playerId: string): Promise<ListTrainingDto[]> {
-    const toyos = await this.playerToyoService.getPlayerToyos(playerId);
-    const data = await this.trainingRepository.list(playerId, toyos);
+    const data = await this.trainingRepository.list(playerId);
     return data;
   }
 

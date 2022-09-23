@@ -19,7 +19,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentPlayerInterceptor } from 'src/interceptors/current-player.interceptor';
-import { CreateResponse, ErrorResponse } from 'src/utils/http/responses';
+import {
+  CreateResponse,
+  ErrorResponse,
+  SuccessResponse,
+} from 'src/utils/http/responses';
 import di from '../di';
 import { TrainingStartDto } from '../dto/start.dto';
 import { TrainingService } from '../services/training.service';
@@ -64,6 +68,34 @@ export class TrainingController {
   @ApiQuery({ name: 'id', description: 'Training id' })
   @ApiOkResponse({
     description: 'Training successfully finished',
+    type: () => SuccessResponse,
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden',
+    type: () => ErrorResponse,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'An error occurred',
+    type: () => ErrorResponse,
+  })
+  @Post('/:id')
+  async close(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<SuccessResponse> {
+    const playerId = req.player.id;
+    const model = await this.trainingService.close(id, playerId);
+
+    return new SuccessResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Training successfully finished',
+      body: model,
+    });
+  }
+
+  @ApiQuery({ name: 'id', description: 'Training id' })
+  @ApiOkResponse({
+    description: 'Signature successfully returned',
     type: () => CreateResponse,
   })
   @ApiForbiddenResponse({
@@ -75,12 +107,12 @@ export class TrainingController {
     type: () => ErrorResponse,
   })
   @Put('/:id')
-  async close(
+  async getSignature(
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<CreateResponse> {
     const playerId = req.player.id;
-    const model = await this.trainingService.close(id, playerId);
+    const model = await this.trainingService.getSignature(id, playerId);
 
     return new CreateResponse({
       statusCode: HttpStatus.OK,
@@ -89,23 +121,7 @@ export class TrainingController {
     });
   }
 
-  @ApiOkResponse({
-    description: 'Successfully retrieved player active trainings',
-    type: () => CreateResponse,
-  })
-  @Get()
-  async list(@Req() req: any): Promise<CreateResponse> {
-    const playerId = req.player.id;
-
-    const trainings = await this.trainingService.list(playerId);
-
-    return new CreateResponse({
-      statusCode: HttpStatus.OK,
-      message: 'Successfully retrieved player active trainings',
-      body: trainings,
-    });
-  }
-
+  @ApiQuery({ name: 'id', description: 'Training id' })
   @ApiOkResponse({
     description: 'Successfully retrieved training result',
     type: () => CreateResponse,
@@ -126,6 +142,23 @@ export class TrainingController {
       statusCode: HttpStatus.OK,
       message: 'Successfully retrieved training result',
       body: result,
+    });
+  }
+
+  @ApiOkResponse({
+    description: 'Successfully retrieved player active trainings',
+    type: () => CreateResponse,
+  })
+  @Get()
+  async list(@Req() req: any): Promise<CreateResponse> {
+    const playerId = req.player.id;
+
+    const trainings = await this.trainingService.list(playerId);
+
+    return new CreateResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Successfully retrieved player active trainings',
+      body: trainings,
     });
   }
 }

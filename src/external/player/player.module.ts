@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import providers from './di-providers';
+import { publicProviders } from './di-providers';
 
 @Module({
-  providers: [providers.PlayerService, providers.PlayerToyoService],
-  exports: [providers.PlayerService, providers.PlayerToyoService],
+  providers: [...publicProviders],
+  exports: publicProviders,
 })
 export class PlayerModule {}

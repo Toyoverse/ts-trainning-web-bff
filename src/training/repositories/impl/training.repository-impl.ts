@@ -233,16 +233,17 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     return;
   }
 
-  async list(
-    player: Parse.Object<Parse.Attributes>,
-    toyos: ToyoDto[],
-  ): Promise<TrainingModel[]> {
+  async list(playerId: string, toyos: ToyoDto[]): Promise<TrainingModel[]> {
     try {
       await this.resetTrainings(toyos);
 
+      const playerParseObject = new Parse.Object(classes.PLAYERS, {
+        id: playerId,
+      });
+
       const query = new Parse.Query(this.DATABASE_CLASS);
       query.equalTo('claimedAt', undefined);
-      query.equalTo('player', player);
+      query.equalTo('player', playerParseObject);
       query.include('toyo');
       const trainingList = await query.findAll();
 

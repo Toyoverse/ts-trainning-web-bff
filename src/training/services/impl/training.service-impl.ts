@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Inject,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import di from '../../di';
@@ -21,9 +20,12 @@ import { ToyoPersonaTrainingEventService } from 'src/training-event/services/toy
 import { ListTrainingDto } from 'src/training/dto/list.dto';
 import { PlayerToyoService } from 'src/external/player/services/player-toyo.service';
 import { ForbiddenError } from 'src/errors/forbidden.error';
+import { InternalServerError } from 'src/errors';
 
 @Injectable()
 export class TrainingServiceImpl implements TrainingService {
+  readonly name = 'TrainingService';
+
   constructor(
     @Inject(di.TRAINING_REPOSITORY)
     private trainingRepository: TrainingRepository,
@@ -31,8 +33,6 @@ export class TrainingServiceImpl implements TrainingService {
     private trainingEventService: TrainingEventService,
     @Inject(trainingEventDi.TOYO_PERSONA_TRAINING_EVENT_SERVICE)
     private toyoPersonaTrainingEventService: ToyoPersonaTrainingEventService,
-    @Inject(playerDi.PLAYER_SERVICE)
-    private playerService: PlayerService,
     @Inject(playerDi.PLAYER_TOYO_SERVICE)
     private playerToyoService: PlayerToyoService,
     @Inject(toyoDi.TOYO_SERVICE)
@@ -42,139 +42,169 @@ export class TrainingServiceImpl implements TrainingService {
   ) {}
 
   async start(dto: TrainingStartDto): Promise<TrainingModel> {
-    const toyos = await this.playerToyoService.getPlayerToyos(dto.playerId);
+    try {
+      const toyos = await this.playerToyoService.getPlayerToyos(dto.playerId);
 
-    const [toyo] = toyos.filter((toyo) => toyo.tokenId === dto.toyoTokenId);
-    if (!toyo) {
-      throw new ForbiddenError(
-        'You cannot start a training of toyo that you do not have',
+      const [toyo] = toyos.filter((toyo) => toyo.tokenId === dto.toyoTokenId);
+      if (!toyo) {
+        throw new ForbiddenError(
+          'You cannot start a training of toyo that you do not have',
+        );
+      }
+
+      const isToyoAlreadyTraining =
+        await this.trainingRepository.verifyIfToyoIsTraining(toyo.id);
+
+      if (isToyoAlreadyTraining) {
+        throw new BadRequestException(
+          'You cannot start a training for a toyo that is already training',
+        );
+      }
+
+      const currentTrainingEvent = await this.trainingEventService.getCurrent();
+
+      const config = currentTrainingEvent.blowsConfig.find(
+        (i) => i.qty === dto.combination.length,
       );
-    }
 
-    const isToyoAlreadyTraining =
-      await this.trainingRepository.verifyIfToyoIsTraining(toyo.id);
+      if (!config) {
+        throw new NotFoundException('Could not find the training config info');
+      }
 
-    if (isToyoAlreadyTraining) {
-      throw new BadRequestException(
-        'You cannot start a training for a toyo that is already training',
+      const training = await this.trainingRepository.start(
+        toyo.id,
+        dto.playerId,
+        currentTrainingEvent.id,
+        config,
+        dto.combination,
       );
+
+      if (!training) {
+        throw new InternalServerError(
+          'An error occurred while trying to start the training',
+        );
+      }
+
+      return training;
+    } catch (e) {
+      if (e.name === Error.name || e.name === InternalServerError.name) {
+        throw new InternalServerError(
+          `Internal server error found when tried to start a training for toyo with token ${dto.toyoTokenId} owned by player ${dto.playerId} `,
+          { cause: e.message, ctx: TrainingServiceImpl.name },
+        );
+      }
+
+      throw e;
     }
-
-    const currentTrainingEvent = await this.trainingEventService.getCurrent();
-
-    const config = currentTrainingEvent.blowsConfig.find(
-      (i) => i.qty === dto.combination.length,
-    );
-
-    if (!config) {
-      throw new NotFoundException('Could not find the training config info');
-    }
-
-    const training = await this.trainingRepository.start(
-      toyo.id,
-      dto.playerId,
-      currentTrainingEvent.id,
-      config,
-      dto.combination,
-    );
-
-    if (!training) {
-      throw new InternalServerErrorException(
-        'An error occurred while trying to start the training',
-      );
-    }
-
-    return training;
   }
 
   async close(id: string, loggedPlayerId: string): Promise<TrainingModel> {
-    const training = await this.trainingRepository.getTrainingById(id);
-    const playerId = training.get('player').id;
+    try {
+      const training = await this.trainingRepository.getTrainingById(id);
+      const playerId = training.get('player').id;
 
-    if (!training || training.get('claimedAt') !== undefined) {
-      throw new NotFoundException('Training not found or already claimed');
-    }
+      if (!training || training.get('claimedAt') !== undefined) {
+        throw new NotFoundException('Training not found or already claimed');
+      }
 
-    if (loggedPlayerId !== playerId) {
-      throw new ForbiddenError(
-        'You cannot close a training of toyo that you do not have',
-      );
-    }
+      if (loggedPlayerId !== playerId) {
+        throw new ForbiddenError(
+          'You cannot close a training of toyo that you do not have',
+        );
+      }
 
-    const toyoId = training.get('toyo').id;
-    const toyo = await this.toyoService.getToyoById(toyoId);
+      const toyoId = training.get('toyo').id;
+      const toyo = await this.toyoService.getToyoById(toyoId);
 
-    const toyoPersona = await this.toyoPersonaService.getById(
-      toyo.get('toyoPersonaOrigin').id,
-    );
-
-    const trainingEvent = await this.trainingEventService.getById(
-      training.get('trainingEvent').id,
-    );
-
-    const toyoPersonaTrainingEvent =
-      await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
-        toyoPersona.id,
-        trainingEvent.id,
+      const toyoPersona = await this.toyoPersonaService.getById(
+        toyo.get('toyoPersonaOrigin').id,
       );
 
-    const model = await this.trainingRepository.close(
-      training,
-      toyo,
-      trainingEvent,
-      toyoPersonaTrainingEvent,
-    );
+      const trainingEvent = await this.trainingEventService.getById(
+        training.get('trainingEvent').id,
+      );
 
-    return model;
+      const toyoPersonaTrainingEvent =
+        await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
+          toyoPersona.id,
+          trainingEvent.id,
+        );
+
+      const model = await this.trainingRepository.close(
+        training,
+        toyo,
+        trainingEvent,
+        toyoPersonaTrainingEvent,
+      );
+
+      return model;
+    } catch (e) {
+      if (e.name === Error.name || e.name === InternalServerError.name) {
+        throw new InternalServerError(
+          `Internal server error found when tried to close the training ${id} onwed by player ${loggedPlayerId} `,
+          { cause: e.message, ctx: TrainingServiceImpl.name },
+        );
+      }
+
+      throw e;
+    }
   }
 
   async list(playerId: string): Promise<ListTrainingDto[]> {
-    const player = await this.playerService.getPlayerById(playerId);
-    const toyos = await this.playerToyoService.getPlayerToyos(player.id);
-
-    const data = await this.trainingRepository.list(player, toyos);
-
+    const toyos = await this.playerToyoService.getPlayerToyos(playerId);
+    const data = await this.trainingRepository.list(playerId, toyos);
     return data;
   }
 
   async getResult(id: string, loggedPlayerId: string): Promise<TrainingModel> {
-    const training = await this.trainingRepository.getTrainingById(id);
+    try {
+      const training = await this.trainingRepository.getTrainingById(id);
 
-    if (!training) {
-      throw new NotFoundException('Training not found');
-    }
+      if (!training) {
+        throw new NotFoundException('Training not found');
+      }
 
-    const playerId = training.get('player').id;
+      const playerId = training.get('player').id;
 
-    if (loggedPlayerId !== playerId) {
-      throw new ForbiddenError(
-        'You cannot get the training result of toyo that you do not have',
-      );
-    }
+      if (loggedPlayerId !== playerId) {
+        throw new ForbiddenError(
+          'You cannot get the training result of toyo that you do not have',
+        );
+      }
 
-    const toyoId = training.get('toyo').id;
-    const toyo = await this.toyoService.getToyoById(toyoId);
+      const toyoId = training.get('toyo').id;
+      const toyo = await this.toyoService.getToyoById(toyoId);
 
-    const toyoPersona = await this.toyoPersonaService.getById(
-      toyo.get('toyoPersonaOrigin').id,
-    );
-
-    const trainingEvent = await this.trainingEventService.getById(
-      training.get('trainingEvent').id,
-    );
-
-    const toyoPersonaTrainingEvent =
-      await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
-        toyoPersona.id,
-        trainingEvent.id,
+      const toyoPersona = await this.toyoPersonaService.getById(
+        toyo.get('toyoPersonaOrigin').id,
       );
 
-    const model = await this.trainingRepository.getResult(
-      training,
-      trainingEvent,
-      toyoPersonaTrainingEvent,
-    );
+      const trainingEvent = await this.trainingEventService.getById(
+        training.get('trainingEvent').id,
+      );
 
-    return model;
+      const toyoPersonaTrainingEvent =
+        await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
+          toyoPersona.id,
+          trainingEvent.id,
+        );
+
+      const model = await this.trainingRepository.getResult(
+        training,
+        trainingEvent,
+        toyoPersonaTrainingEvent,
+      );
+
+      return model;
+    } catch (e) {
+      if (e instanceof InternalServerError || e instanceof Error) {
+        throw new InternalServerError(
+          `Internal server error found when tried to get result for training ${id} owned by player ${loggedPlayerId} `,
+          { cause: e.message, ctx: TrainingServiceImpl.name },
+        );
+      }
+
+      throw e;
+    }
   }
 }

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import providers from './di-providers';
+import { privateProviders, publicProviders } from './di-providers';
 import { TrainingBlowController } from './controllers/training-blow.controller';
 
 @Module({
-  providers: [providers.TrainingBlowRepository, providers.TrainingBlowService],
+  providers: [...privateProviders, ...publicProviders],
   controllers: [TrainingBlowController],
-  exports: [providers.TrainingBlowService],
+  exports: publicProviders,
 })
 export class TrainingBlowModule {}

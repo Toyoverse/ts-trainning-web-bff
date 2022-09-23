@@ -17,10 +17,7 @@ export interface TrainingRepository {
     trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingModel>;
-  list(
-    player: Parse.Object<Parse.Attributes>,
-    toyos: ToyoDto[],
-  ): Promise<TrainingModel[]>;
+  list(player: string, toyos: ToyoDto[]): Promise<TrainingModel[]>;
   verifyIfToyoIsTraining(toyoId: string): Promise<boolean>;
   getTrainingById(trainingId: string): Promise<Parse.Object<Parse.Attributes>>;
   getResult(

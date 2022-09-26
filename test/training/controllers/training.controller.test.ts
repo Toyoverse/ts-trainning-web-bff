@@ -1,48 +1,54 @@
 import 'reflect-metadata';
+import { HttpStatus } from '@nestjs/common';
+import { PlayerDto } from 'src/external/player/dto/player.dto';
 import { TrainingController } from 'src/training/controllers/training.controller';
-import { TrainingStartDto } from 'src/training/dto/start.dto';
+import { TrainingResponseDto } from 'src/training/dto/training-response.dto';
+import { TrainingStartRequestDto } from 'src/training/dto/training-start-request.dto';
+import { TrainingService } from 'src/training/services/training.service';
+import { CreateResponse } from 'src/utils/http/responses';
 
-describe('Training controller tests', () => {
-  const trainingService = {
+describe('TrainingController', () => {
+  const trainingService: Partial<jest.Mocked<TrainingService>> = {
     start: jest.fn(),
     close: jest.fn(),
     list: jest.fn(),
+    getResult: jest.fn(),
   };
 
-  const trainingController = new TrainingController(trainingService);
+  const trainingController = new TrainingController(trainingService as any);
 
   describe('Start training', () => {
     test('should return success', async () => {
-      const dto = new TrainingStartDto({
-        playerId: 'SJhHPvzbw7',
+      const currentPlayer = new PlayerDto({ id: '1' });
+
+      const requestDto = new TrainingStartRequestDto({
+        playerId: currentPlayer.id,
         combination: ['3', '2', '1'],
-        toyoId: 'tkWoczXeYJ',
-        trainingId: 'hWefhSbzF5',
+        toyoTokenId: 'tkWoczXeYJ',
+        isAutomata: true,
       });
 
-      await trainingController.start(dto);
+      const serviceResponse = new TrainingResponseDto({
+        id: '1234',
+        startAt: new Date('2022-02-02'),
+        endAt: new Date('2022-02-07'),
+        combination: ['1', '5', '4'],
+      });
 
-      expect(trainingService.start).toBeCalled();
-    });
-  });
+      trainingService.start.mockResolvedValue(serviceResponse);
 
-  describe('Close training', () => {
-    test('should return success', async () => {
-      const trainingId = 'SP4GwD8VmU';
+      const expectedResponse = new CreateResponse({
+        statusCode: HttpStatus.CREATED,
+        message: 'Training successfully started',
+        body: serviceResponse,
+      });
 
-      await trainingController.close(trainingId);
+      const response = await trainingController.start(
+        currentPlayer,
+        requestDto,
+      );
 
-      expect(trainingService.close).toBeCalled();
-    });
-  });
-
-  describe('List trainings', () => {
-    test('should return success', async () => {
-      const playerId = 'SJhHPvzbw7';
-
-      await trainingController.list(playerId);
-
-      expect(trainingService.list).toBeCalled();
+      expect(response).toEqual(expectedResponse);
     });
   });
 });

@@ -1,7 +1,6 @@
 import * as Parse from 'parse/node';
 import { Eth } from 'web3-eth';
 import { keccak256, toWei } from 'web3-utils';
-import { TrainingModel } from '../../../training/models/training.model';
 import { TrainingRepository } from '../training.repository';
 import { InternalServerErrorException } from '@nestjs/common';
 import { compareArrays, convertToTimestamp } from 'src/utils/general';
@@ -9,6 +8,9 @@ import { BlowConfigModel } from 'src/training-event/models/training-event.model'
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 import { classes } from 'src/config/back4app';
+import { TrainingModel } from 'src/training/models/training.model';
+import { TrainingResponseDto } from 'src/training/dto/training-response.dto';
+import { ListTrainingDto } from 'src/training/dto/list.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
@@ -16,13 +18,42 @@ const Web3Eth = require('web3-eth');
 export class TrainingRepositoryImpl implements TrainingRepository {
   private readonly DATABASE_CLASS = 'ToyoTraining';
 
+  async save(model: TrainingModel): Promise<TrainingModel> {
+    const trainingEventParseObject = new Parse.Object(classes.TRAINING_EVENT, {
+      id: model.trainingEventId,
+    });
+
+    const toyoParseObject = new Parse.Object(classes.TOYO, {
+      id: model.toyoId,
+    });
+
+    const playerParseObject = new Parse.Object(classes.PLAYERS, {
+      id: model.playerId,
+    });
+
+    const trainingParseObject = new Parse.Object(classes.TOYO_TRAINING);
+    trainingParseObject.set('trainingEvent', trainingEventParseObject);
+    trainingParseObject.set('toyo', toyoParseObject);
+    trainingParseObject.set('player', playerParseObject);
+    trainingParseObject.set('startAt', model.startAt);
+    trainingParseObject.set('endAt', model.endAt);
+    trainingParseObject.set('combination', model.combination);
+    trainingParseObject.set('isTraining', model.isTraining);
+    trainingParseObject.set('isAutomata', model.isAutomata);
+
+    await trainingParseObject.save();
+
+    model.id = trainingParseObject.id;
+    return model;
+  }
+
   async start(
     toyoId: string,
     playerId: string,
     currentTrainingEventId: string,
     config: BlowConfigModel,
     combination: string[],
-  ): Promise<TrainingModel> {
+  ): Promise<TrainingResponseDto> {
     const training = new Parse.Object(this.DATABASE_CLASS);
     const toyo = new Parse.Object(classes.TOYO, { id: toyoId });
     const player = new Parse.Object(classes.PLAYERS, { id: playerId });
@@ -56,7 +87,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     training: Parse.Object<Parse.Attributes>,
     currentTrainingEvent: TrainingEventGetCurrentDto,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
-  ): Promise<TrainingModel> {
+  ): Promise<TrainingResponseDto> {
     const toyoPersonaTrainingEventQuery = new Parse.Query(
       'ToyoPersonaTrainingEvent',
     );
@@ -94,7 +125,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     toyo: Parse.Object<Parse.Attributes>,
     currentTrainingEvent: TrainingEventGetCurrentDto,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
-  ): Promise<TrainingModel> {
+  ): Promise<TrainingResponseDto> {
     try {
       const trainingEventQuery = new Parse.Query('TrainingEvent');
       trainingEventQuery.equalTo('objectId', currentTrainingEvent.id);
@@ -188,8 +219,9 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
-  async list(player: Parse.Object<Parse.Attributes>): Promise<TrainingModel[]> {
+  async list(playerId: string): Promise<ListTrainingDto[]> {
     try {
+      const player = new Parse.Object(classes.PLAYERS, { id: playerId });
       const query = new Parse.Query(this.DATABASE_CLASS);
       query.equalTo('claimedAt', undefined);
       query.equalTo('player', player);
@@ -241,12 +273,12 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   private buildModelFromParseObject(
     object: Parse.Object<Parse.Attributes>,
     bondReward?: { bond: number; bondFormatted: string },
-  ): TrainingModel {
+  ): TrainingResponseDto {
     const startAt = convertToTimestamp(object.get('startAt'));
     const endAt = convertToTimestamp(object.get('endAt'));
     const claimedAt = convertToTimestamp(object.get('claimedAt'));
 
-    return new TrainingModel({
+    return new TrainingResponseDto({
       id: object.id,
       startAt,
       endAt,

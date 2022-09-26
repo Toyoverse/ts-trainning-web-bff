@@ -1,10 +1,11 @@
 import * as Parse from 'parse/node';
 import { classes } from 'src/config/back4app';
 import { NotFoundError } from 'src/errors';
+import { PlayerDto } from '../../dto/player.dto';
 import { PlayerService } from '../player.service';
 
 export class PlayerServiceImpl implements PlayerService {
-  async getPlayerByWalletId(walletId: string): Promise<any> {
+  async getPlayerByWalletId(walletId: string): Promise<PlayerDto> {
     const parseQuery = new Parse.Query(classes.PLAYERS);
     parseQuery.equalTo('walletAddress', walletId);
 
@@ -17,7 +18,7 @@ export class PlayerServiceImpl implements PlayerService {
     return { id: parseObject.id };
   }
 
-  async getPlayerById(playerId: string): Promise<any> {
+  async getPlayerById(playerId: string): Promise<PlayerDto> {
     const parseQuery = new Parse.Query(classes.PLAYERS);
     parseQuery.equalTo('objectId', playerId);
 
@@ -27,6 +28,6 @@ export class PlayerServiceImpl implements PlayerService {
       throw new NotFoundError(`Player not found with id ${playerId}`);
     }
 
-    return player;
+    return { id: player.id };
   }
 }

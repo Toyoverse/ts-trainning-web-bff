@@ -6,6 +6,7 @@ export enum classes {
   TOYO = 'Toyo',
   TOYO_PERSONA = 'ToyoPersona',
   TOYO_PERSONA_TRAINING_EVENT = 'ToyoPersonaTrainingEvent',
+  TOYO_TRAINING = 'ToyoTraining',
   TRAINING_BLOW = 'TrainingBlow',
   TRAINING_EVENT = 'TrainingEvent',
 }

@@ -10,10 +10,14 @@ jest.mock('fs');
 const cardsMetaDirectory = './files/cards';
 process.env.CARD_TRAINING_REWARD_METADATA_DIRECTORY = cardsMetaDirectory;
 
-describe('Card training reward metadata repository tests', () => {
+describe('CardTrainingRewardMetadataImpl', () => {
   const repository = new CardTrainingRewardMetadataRepositoryImpl();
 
-  describe('Save metadata', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  describe('Save', () => {
     it('Should save', async () => {
       const card = new CardTrainingRewardModel({
         name: 'Card Reward',
@@ -22,11 +26,12 @@ describe('Card training reward metadata repository tests', () => {
         cardId: '1',
         rotText: 'Lorem ipsum dolor sit amet.',
         type: '1',
+        cardCode: 'fdafdae3',
       });
 
       const jsonMetadata = JSON.stringify(card.getMetadata());
 
-      const fileName = 'd41d8cd98f00b204e900998ecf8427e';
+      const fileName = card.cardCode;
 
       jest.spyOn(CryptoJS, 'MD5').mockImplementation(() => {
         return {

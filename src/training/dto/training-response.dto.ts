@@ -1,29 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { CardTrainingRewardGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 
-export class ListTrainingDto {
-  @ApiProperty()
+export class TrainingResponseDto {
   id?: string;
-
-  @ApiProperty()
   startAt: Date | number;
-
-  @ApiProperty()
   endAt: Date | number;
-
-  @ApiProperty()
   claimedAt?: Date | number;
-
-  @ApiProperty()
+  bond?: number | string;
   toyoTokenId?: string;
-
-  @ApiProperty()
   signature?: string;
-
-  @ApiProperty()
   combination: string[];
-
-  @ApiProperty()
+  isCombinationCorrect?: boolean;
+  combinationResult?: object;
   card?: CardTrainingRewardGetCurrentDto;
 
   constructor(attrs: {
@@ -31,18 +18,24 @@ export class ListTrainingDto {
     startAt: Date | number;
     endAt: Date | number;
     claimedAt?: Date | number;
+    bond?: number | string;
     toyoTokenId?: string;
     signature?: string;
     combination: string[];
+    isCombinationCorrect?: boolean;
+    combinationResult?: object;
     card?: CardTrainingRewardGetCurrentDto;
   }) {
     this.id = attrs.id;
     this.startAt = attrs.startAt;
     this.endAt = attrs.endAt;
     this.claimedAt = attrs.claimedAt;
+    this.bond = attrs.bond;
     this.toyoTokenId = attrs.toyoTokenId;
     this.signature = attrs.signature;
     this.combination = attrs.combination;
+    this.isCombinationCorrect = attrs.isCombinationCorrect;
     this.card = attrs.card;
+    this.combinationResult = attrs.combinationResult;
   }
 }

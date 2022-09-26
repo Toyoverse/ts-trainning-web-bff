@@ -14,10 +14,7 @@ import { TrainingBlowService } from 'src/training-blow/services/training-blow.se
 import { ToyoPersonaTrainingEventRepository } from 'src/training-event/repositories/toyo-persona-training-event.repository';
 
 import { ToyoPersonaTrainingEventService } from '../toyo-persona-training-event.service';
-import {
-  CardTrainingRewardCreateDto,
-  ToyoPersonaTrainingEventCreateDto,
-} from 'src/training-event/dto/toyo-persona-training-event/create.dto';
+import { ToyoPersonaTrainingEventCreateDto } from 'src/training-event/dto/toyo-persona-training-event/create.dto';
 import { ToyoPersonaTrainingEventModel } from 'src/training-event/models/toyo-persona-training-event.model';
 import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
@@ -41,18 +38,19 @@ export class ToyoPersonaTrainingEventServiceImpl
     private _cardTrainingRewardService: CardTrainingRewardService,
   ) {}
 
-  async create(createDto: ToyoPersonaTrainingEventCreateDto): Promise<UUID> {
-    await this._checkPersona(createDto.toyoPersonaId);
-    await this._checkBlowsIds(createDto.correctBlowsCombinationIds);
+  async create(input: ToyoPersonaTrainingEventCreateDto): Promise<UUID> {
+    await this._checkPersona(input.toyoPersonaId);
+    await this._checkBlowsIds(input.correctBlowsCombinationIds);
 
     const cardCode: string = CryptoJS.MD5(
       new Date().getTime().toString(),
     ).toString();
-    createDto.cardReward.cardCode = cardCode;
+
+    input.cardReward.cardCode = cardCode;
 
     const model = new ToyoPersonaTrainingEventModel({
-      ...createDto,
-      cardReward: new CardTrainingRewardModel({ ...createDto.cardReward }),
+      ...input,
+      cardReward: new CardTrainingRewardModel({ ...input.cardReward }),
     });
 
     const { id, cardReward } = await this._repository.save(model);
@@ -96,6 +94,23 @@ export class ToyoPersonaTrainingEventServiceImpl
 
     const model = await this._repository.getByTrainingEventAndToyoPersona(
       trainingEvent.id,
+      toyoPersonaId,
+    );
+
+    if (!model) {
+      throw new NotFoundError(
+        'There is no current training event for toyo persona',
+      );
+    }
+    return new ToyoPersonaTrainingEventGetCurrentDto(model as any);
+  }
+
+  async getToyoPersonaEventByEventId(
+    toyoPersonaId: string,
+    trainingEventId: string,
+  ): Promise<ToyoPersonaTrainingEventGetCurrentDto> {
+    const model = await this._repository.getByTrainingEventAndToyoPersona(
+      trainingEventId,
       toyoPersonaId,
     );
 

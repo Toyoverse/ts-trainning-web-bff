@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import providers from './di-providers';
+import { publicProviders } from './di-providers';
 
 @Module({
-  providers: [providers.ToyoPersonaService, providers.ToyoService],
-  exports: [providers.ToyoPersonaService, providers.ToyoService],
+  providers: [...publicProviders],
+  exports: publicProviders,
 })
 export class ToyoModule {}

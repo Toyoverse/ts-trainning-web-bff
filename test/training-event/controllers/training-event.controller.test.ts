@@ -7,14 +7,15 @@ import {
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { CreateResponse } from 'src/utils/http/responses/create.response';
 import { TrainingEventController } from 'src/training-event/controllers/training-event.controller';
+import { TrainingEventService } from 'src/training-event/services/training-event.service';
 
 describe('Training Event Controller Tests', () => {
-  const trainingEventService = {
+  const trainingEventService: Partial<jest.Mocked<TrainingEventService>> = {
     create: jest.fn(),
     getCurrent: jest.fn(),
   };
   const trainingEventController = new TrainingEventController(
-    trainingEventService,
+    trainingEventService as any,
   );
   describe('Create training event', () => {
     test('Given valid request when create training event then create', async () => {

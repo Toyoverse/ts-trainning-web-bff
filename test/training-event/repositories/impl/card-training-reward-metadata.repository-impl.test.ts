@@ -1,74 +1,61 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as CryptoJS from 'crypto-js';
-
-import { CardTrainingRewardMetadataRepositoryImpl } from 'src/training-event/repositories/impl/card-training-reward-metadata.repository-impl';
+import { NodeSSH } from 'node-ssh';
 import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
+import { CardTrainingRewardMetadataRepositoryImpl } from 'src/training-event/repositories/impl/card-training-reward-metadata.repository-impl';
 
-jest.mock('fs');
+jest.mock('node-ssh');
 
-const cardsMetaDirectory = './files/cards';
-process.env.CARD_TRAINING_REWARD_METADATA_DIRECTORY = cardsMetaDirectory;
+process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_HOST = 'localhost';
+process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_PORT = '22';
+process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_USERNAME = 'admin';
+process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_PRIVATE_KEY =
+  '~\\.ssh\\id_ed25519';
+process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_DIR =
+  '/www/toyoverse/metadata/cards';
 
-describe('CardTrainingRewardMetadataImpl', () => {
+describe('CardTrainingRewardMetadataRepositoryImpl', () => {
   const repository = new CardTrainingRewardMetadataRepositoryImpl();
 
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
-
-  describe('Save', () => {
-    it('Should save', async () => {
-      const card = new CardTrainingRewardModel({
+  describe('save', () => {
+    it('should create file in remote server', async () => {
+      const model = new CardTrainingRewardModel({
         name: 'Card Reward',
         description: 'Lorem ipsum dolor sit amet.',
         imageUrl: 'https://www.images.com/card.jpeg',
         cardId: '1',
         rotText: 'Lorem ipsum dolor sit amet.',
         type: '1',
-        cardCode: 'fdafdae3',
+        cardCode: 'fda3f5467',
       });
 
-      const jsonMetadata = JSON.stringify(card.getMetadata());
+      const json = JSON.stringify(model);
 
-      const fileName = card.cardCode;
+      const mockNodeSSHConstructor = jest.mocked(NodeSSH);
 
-      jest.spyOn(CryptoJS, 'MD5').mockImplementation(() => {
-        return {
-          toString: () => fileName,
-        } as any;
+      const mockNodeSSH: Partial<jest.Mocked<NodeSSH>> = {
+        connect: jest.fn(),
+        execCommand: jest.fn(),
+        dispose: jest.fn(),
+      };
+
+      mockNodeSSHConstructor.mockReturnValue(mockNodeSSH as any);
+
+      await repository.save(model);
+
+      expect(mockNodeSSH.connect).toBeCalledWith({
+        host: process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_HOST,
+        username: process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_USERNAME,
+        privateKeyPath:
+          process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_PRIVATE_KEY,
       });
 
-      const mockFs = jest.mocked(fs);
-      mockFs.existsSync.mockReturnValue(true);
-
-      await repository.save(card);
-
-      const filePath = path.join(cardsMetaDirectory, fileName + '.json');
-
-      expect(mockFs.writeFileSync).toBeCalledWith(
-        filePath,
-        jsonMetadata,
-        'utf-8',
+      expect(mockNodeSSH.execCommand).toBeCalledWith(
+        `echo '${json}' > ${model.cardCode}.json`,
+        {
+          cwd: process.env.CARD_TRAINING_REWARD_METADATA_REMOTE_DIR,
+        },
       );
-    });
-    it('Should create directory if it does not exist', async () => {
-      const card = new CardTrainingRewardModel({
-        name: 'Card Reward',
-        description: 'Lorem ipsum dolor sit amet.',
-        imageUrl: 'https://www.images.com/card.jpeg',
-        cardId: '1',
-        rotText: 'Lorem ipsum dolor sit amet.',
-        type: '1',
-      });
 
-      const mockFs = jest.mocked(fs);
-      mockFs.existsSync.mockReturnValue(false);
-      await repository.save(card);
-
-      expect(mockFs.mkdirSync).toBeCalledWith(cardsMetaDirectory, {
-        recursive: true,
-      });
+      expect(mockNodeSSH.dispose).toBeCalled();
     });
   });
 });

@@ -9,6 +9,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
+import IsDateAfter from 'src/utils/validation/decorators/is-date-after.decorator';
 
 export class TrainingEventCreateDto {
   @ApiProperty()
@@ -25,6 +26,7 @@ export class TrainingEventCreateDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsDate()
+  @IsDateAfter('startAt')
   @Type(() => Date)
   endAt: Date;
 

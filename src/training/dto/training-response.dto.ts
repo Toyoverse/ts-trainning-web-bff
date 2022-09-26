@@ -12,6 +12,7 @@ export class TrainingResponseDto {
   isCombinationCorrect?: boolean;
   combinationResult?: object;
   card?: CardTrainingRewardGetCurrentDto;
+  isAutomata: boolean;
 
   constructor(attrs: {
     id?: string;
@@ -25,6 +26,7 @@ export class TrainingResponseDto {
     isCombinationCorrect?: boolean;
     combinationResult?: object;
     card?: CardTrainingRewardGetCurrentDto;
+    isAutomata: boolean;
   }) {
     this.id = attrs.id;
     this.startAt = attrs.startAt;
@@ -37,5 +39,6 @@ export class TrainingResponseDto {
     this.isCombinationCorrect = attrs.isCombinationCorrect;
     this.card = attrs.card;
     this.combinationResult = attrs.combinationResult;
+    this.isAutomata = attrs.isAutomata;
   }
 }

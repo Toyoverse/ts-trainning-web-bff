@@ -107,6 +107,7 @@ describe('Training service tests', () => {
         endAt,
         toyoTokenId: requestDto.toyoTokenId,
         combination: requestDto.combination,
+        isAutomata: requestDto.isAutomata,
       });
 
       expect(response).toEqual(expectedResponse);
@@ -169,6 +170,7 @@ describe('Training service tests', () => {
         endAt,
         toyoTokenId: requestDto.toyoTokenId,
         combination: requestDto.combination,
+        isAutomata: requestDto.isAutomata,
       });
 
       expect(response).toEqual(expectedResponse);

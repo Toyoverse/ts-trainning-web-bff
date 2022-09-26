@@ -1,5 +1,5 @@
+import { ToyoDto } from 'src/external/player/dto/toyo.dto';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
-import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { BlowConfigModel } from 'src/training-event/models/training-event.model';
 import { ListTrainingDto } from '../dto/list.dto';
 import { TrainingResponseDto } from '../dto/training-response.dto';
@@ -16,15 +16,15 @@ export interface TrainingRepository {
   close(
     training: Parse.Object<Parse.Attributes>,
     toyo: Parse.Object<Parse.Attributes>,
-    currentTrainingEvent: TrainingEventGetCurrentDto,
+    trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingResponseDto>;
-  list(playerId: string): Promise<ListTrainingDto[]>;
+  list(player: string, toyos: ToyoDto[]): Promise<TrainingResponseDto[]>;
   verifyIfToyoIsTraining(toyoId: string): Promise<boolean>;
   getTrainingById(trainingId: string): Promise<Parse.Object<Parse.Attributes>>;
   getResult(
     training: Parse.Object<Parse.Attributes>,
-    currentTrainingEvent: TrainingEventGetCurrentDto,
+    trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingResponseDto>;
   save(model: TrainingModel): Promise<TrainingModel>;

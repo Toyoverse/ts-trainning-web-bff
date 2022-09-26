@@ -45,3 +45,9 @@ test-report.xml
 /_optimize
 /.build
 /.warmup
+
+# Private Keys
+keyrsa
+
+# TMP
+/tmp

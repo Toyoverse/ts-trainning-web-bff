@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import providers from './di-providers';
+import { publicProviders, privateProviders } from './di-providers';
 
 import { TrainingBlowModule } from 'src/training-blow/training-blow.module';
 import { TrainingEventController } from './controllers/training-event.controller';
@@ -8,18 +8,8 @@ import { ToyoModule } from 'src/external/toyo/toyo.module';
 
 @Module({
   imports: [TrainingBlowModule, ToyoModule],
-  providers: [
-    providers.CardTrainingRewardMetadataRepository,
-    providers.CardTrainingRewardService,
-    providers.ToyoPersonaTrainingEventRepository,
-    providers.ToyoPersonaTrainingEventService,
-    providers.TrainingEventRepository,
-    providers.TrainingEventService,
-  ],
+  providers: [...privateProviders, ...publicProviders],
   controllers: [TrainingEventController, ToyoPersonaTrainingEventController],
-  exports: [
-    providers.TrainingEventService,
-    providers.ToyoPersonaTrainingEventService,
-  ],
+  exports: publicProviders,
 })
 export class TrainingEventModule {}

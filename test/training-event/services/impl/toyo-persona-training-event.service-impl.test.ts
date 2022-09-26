@@ -54,6 +54,7 @@ describe('Toyo persona training event service impl tests', () => {
           rotText: 'Lorem ipsum dolor sit amet.',
           type: '1',
           imageUrl: 'https://www.images.com/card1',
+          cardCode: '23456f',
         }),
       });
 
@@ -81,6 +82,7 @@ describe('Toyo persona training event service impl tests', () => {
           rotText: input.cardReward.rotText,
           type: input.cardReward.type,
           cardId: input.cardReward.cardId,
+          cardCode: input.cardReward.cardCode,
         }),
       });
 

@@ -33,6 +33,7 @@ describe('TrainingController', () => {
         startAt: new Date('2022-02-02'),
         endAt: new Date('2022-02-07'),
         combination: ['1', '5', '4'],
+        isAutomata: true,
       });
 
       trainingService.start.mockResolvedValue(serviceResponse);

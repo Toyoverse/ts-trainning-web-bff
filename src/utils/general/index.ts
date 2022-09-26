@@ -5,14 +5,17 @@ export function compareArrays(arr1: any[], arr2: any[]) {
     result: [],
   };
 
-  for (const blow of combination.user) {
-    const blowResult = { includes: false, position: false, blow };
-    if (combination.correct.includes(blow)) {
-      blowResult.includes = true;
-    }
+  const userCombination = [...combination.correct];
 
-    if (combination.correct.indexOf(blow) === combination.user.indexOf(blow)) {
+  for (const [index, blow] of combination.user.entries()) {
+    const blowResult = { includes: false, position: false, blow };
+
+    if (combination.correct.indexOf(blow) === index) {
       blowResult.position = true;
+      blowResult.includes = true;
+    } else if (userCombination.includes(blow)) {
+      blowResult.includes = true;
+      userCombination.splice(userCombination.indexOf(blow), 1);
     }
 
     combination.result.push(blowResult);

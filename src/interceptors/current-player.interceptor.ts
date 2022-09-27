@@ -52,14 +52,8 @@ export class CurrentPlayerInterceptor implements NestInterceptor {
 
       return next.handle();
     } catch (e) {
-      const request = context.switchToHttp().getRequest();
-      const walletId = '0xb07f93a611cd8ffe441a8799fc1a24b064650658';
-      const player = await this.playerService.getPlayerByWalletId(walletId);
-
-      request.player = player;
-
-      return next.handle();
-      // throw new UnauthorizedException('Token invalid!');
+      console.log(e.message);
+      throw new UnauthorizedException('Token invalid!');
     }
   }
 }

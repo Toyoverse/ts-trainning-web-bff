@@ -7,4 +7,8 @@ export interface TrainingService {
   close(id: string, loggedPlayerId: string): Promise<TrainingResponseDto>;
   list(id: string): Promise<ListTrainingDto[]>;
   getResult(id: string, loggedPlayerId: string): Promise<TrainingResponseDto>;
+  getSignature(
+    id: string,
+    loggedPlayerId: string,
+  ): Promise<TrainingResponseDto>;
 }

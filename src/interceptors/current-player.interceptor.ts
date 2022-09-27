@@ -52,7 +52,6 @@ export class CurrentPlayerInterceptor implements NestInterceptor {
 
       return next.handle();
     } catch (e) {
-      console.log(e.message);
       throw new UnauthorizedException('Token invalid!');
     }
   }

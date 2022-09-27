@@ -17,9 +17,8 @@ export interface TrainingRepository {
     training: Parse.Object<Parse.Attributes>,
     toyo: Parse.Object<Parse.Attributes>,
     trainingEvent: Parse.Object<Parse.Attributes>,
-    toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingResponseDto>;
-  list(player: string, toyos: ToyoDto[]): Promise<TrainingResponseDto[]>;
+  list(player: string): Promise<TrainingResponseDto[]>;
   verifyIfToyoIsTraining(toyoId: string): Promise<boolean>;
   getTrainingById(trainingId: string): Promise<Parse.Object<Parse.Attributes>>;
   getResult(
@@ -28,4 +27,10 @@ export interface TrainingRepository {
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingResponseDto>;
   save(model: TrainingModel): Promise<TrainingModel>;
+  getSignature(
+    training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
+    trainingEvent: Parse.Object<Parse.Attributes>,
+    toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
+  ): Promise<TrainingResponseDto>;
 }

@@ -136,6 +136,38 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     training: Parse.Object<Parse.Attributes>,
     toyo: Parse.Object<Parse.Attributes>,
     trainingEvent: Parse.Object<Parse.Attributes>,
+  ): Promise<TrainingResponseDto> {
+    try {
+      const card = training.get('cardWon');
+
+      if (card && card.id) {
+        const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner');
+
+        trainingEventWinnerObj.set('toyo', toyo);
+        trainingEventWinnerObj.set('training', training);
+        trainingEventWinnerObj.set('trainingEvent', trainingEvent);
+        trainingEventWinnerObj.set('cardReward', card);
+
+        await trainingEventWinnerObj.save();
+      }
+
+      training.set('claimedAt', new Date());
+      training.set('isTraining', false);
+
+      const savedTraining = await training.save();
+      savedTraining.set('signature', undefined);
+      const trainingModel = this.buildModelFromParseObject(savedTraining);
+
+      return trainingModel;
+    } catch (e) {
+      throw new InternalServerErrorException(e);
+    }
+  }
+
+  async getSignature(
+    training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
+    trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingResponseDto> {
     try {
@@ -193,21 +225,12 @@ export class TrainingRepositoryImpl implements TrainingRepository {
           cardTrainingRewardObj.get('cardCode'),
         );
 
-        const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner');
-
-        trainingEventWinnerObj.set('toyo', toyo);
-        trainingEventWinnerObj.set('training', training);
-        trainingEventWinnerObj.set('trainingEvent', trainingEvent);
-        trainingEventWinnerObj.set('cardReward', card);
-
-        await trainingEventWinnerObj.save();
+        training.set('cardWon', card);
+        training.set('combinationCorrect', true);
       }
 
-      const now = new Date();
-
-      training.set('claimedAt', now);
+      training.set('bondWon', formattedBondAmount);
       training.set('signature', signature);
-      training.set('isTraining', false);
 
       const savedTraining = await training.save();
       const trainingModel = this.buildModelFromParseObject(savedTraining, {
@@ -225,58 +248,53 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
   }
 
-  async resetTrainings(toyos: ToyoDto[]) {
+  async resetTrainings(
+    trainings: Parse.Object<Parse.Attributes>[],
+  ): Promise<Parse.Object<Parse.Attributes>[]> {
     try {
-      for (const toyo of toyos) {
-        const toyoOnChain = await this.getTokenOwnerEntityByTokenId(
-          toyo.tokenId,
+      if (trainings.length > 0) {
+        const claimedsOnChain = await this.getClaimsByWalletAddress(
+          trainings[0].get('player').get('walletAddress'),
         );
 
-        if (toyoOnChain[0]?.isStaked) {
-          const toyoObj = new Parse.Object(classes.TOYO, { id: toyo.id });
+        const trainingsToReset = trainings.filter((training) => {
+          return !training.get('isTraining');
+        });
 
-          const trainings = await this.getClosedTrainingByToyo(toyoObj);
+        if (claimedsOnChain.length > trainingsToReset.length) {
+          trainings.sort((a, b) => {
+            return (
+              new Date(b.get('updatedAt')).getTime() -
+              new Date(a.get('updatedAt')).getTime()
+            );
+          });
 
-          if (trainings.length > 0) {
-            const claims = await this.getClaimsByTokenId(toyo.tokenId);
+          trainings[0].set('claimedAt', new Date());
+          trainings[0].set('isTraining', false);
+          await trainings[0].save();
 
-            if (trainings.length !== claims.length) {
-              trainings.sort((a, b) => {
-                return (
-                  new Date(b.get('updatedAt')).getTime() -
-                  new Date(a.get('updatedAt')).getTime()
-                );
-              });
-              trainings[0].unset('claimedAt');
-              trainings[0].unset('signature');
-              trainings[0].set('isTraining', true);
-              await trainings[0].save();
-            }
-          }
+          trainings.splice(0, 1);
         }
       }
     } catch (e) {
       throw new InternalServerErrorException(e);
     }
-    return;
+    return trainings.filter((training) => training.get('isTraining'));
   }
 
-  async list(
-    playerId: string,
-    toyos: ToyoDto[],
-  ): Promise<TrainingResponseDto[]> {
+  async list(playerId: string): Promise<TrainingResponseDto[]> {
     try {
-      await this.resetTrainings(toyos);
-
       const playerParseObject = new Parse.Object(classes.PLAYERS, {
         id: playerId,
       });
 
       const query = new Parse.Query(this.DATABASE_CLASS);
-      query.equalTo('claimedAt', undefined);
       query.equalTo('player', playerParseObject);
       query.include('toyo');
-      const trainingList = await query.findAll();
+      query.include('player');
+      let trainingList = await query.findAll();
+
+      trainingList = await this.resetTrainings(trainingList);
 
       const formattedArray = trainingList.map((e) => {
         return this.buildModelFromParseObject(e);
@@ -313,6 +331,22 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
     const data: any = await request(this.THEGRAPH_URL, query);
     return data?.tokenOwnerEntities;
+  }
+
+  async getClaimsByWalletAddress(owner: string): Promise<any[]> {
+    const query = gql` {
+      tokenClaimedEntities(first: 1000, where: {owner: "${owner}"}) {
+        tokenId,
+        id,
+        cardCode,
+        bondAmount,
+        owner
+      }
+    }
+  `;
+
+    const data: any = await request(this.THEGRAPH_URL, query);
+    return data?.tokenClaimedEntities;
   }
 
   async getClaimsByTokenId(tokenId: string): Promise<any[]> {
@@ -354,6 +388,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   ): Promise<Parse.Object<Parse.Attributes>> {
     const trainingQuery = new Parse.Query(this.DATABASE_CLASS);
     trainingQuery.equalTo('objectId', trainingId);
+    trainingQuery.include('cardWon');
     const training = await trainingQuery.first();
 
     if (!training) {
@@ -429,5 +464,23 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     }
 
     return false;
+  }
+
+  private async resetCardClaimByTrainingId(
+    training: Parse.Object<Parse.Attributes>,
+    toyo: Parse.Object<Parse.Attributes>,
+  ): Promise<void> {
+    const trainingEventWinnerQuery = new Parse.Query('TrainingEventWinner');
+    trainingEventWinnerQuery.equalTo('toyo', toyo);
+    trainingEventWinnerQuery.equalTo('training', training);
+    const trainingEventWinner = await trainingEventWinnerQuery.first();
+
+    if (trainingEventWinner) {
+      const trainingEventWinnerObj = new Parse.Object('TrainingEventWinner', {
+        id: trainingEventWinner.id,
+      });
+
+      trainingEventWinnerObj.destroy();
+    }
   }
 }

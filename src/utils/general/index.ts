@@ -10,7 +10,7 @@ export function compareArrays(arr1: any[], arr2: any[]) {
   for (const [index, blow] of combination.user.entries()) {
     const blowResult = { includes: false, position: false, blow };
 
-    if (combination.correct.indexOf(blow) === index) {
+    if (combination.correct[index] === blow) {
       blowResult.position = true;
       blowResult.includes = true;
     } else if (userCombination.includes(blow)) {

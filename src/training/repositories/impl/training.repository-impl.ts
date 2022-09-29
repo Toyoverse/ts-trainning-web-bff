@@ -9,7 +9,6 @@ import { BlowConfigModel } from 'src/training-event/models/training-event.model'
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 import { classes } from 'src/config/back4app';
 import { request, gql } from 'graphql-request';
-import { ToyoDto } from 'src/external/player/dto/toyo.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');

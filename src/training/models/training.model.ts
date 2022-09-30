@@ -9,6 +9,7 @@ export class TrainingModel {
   signature?: string;
   isTraining: boolean;
   combination: string[];
+  isCombinationCorrect?: boolean;
   isAutomata: boolean;
 
   constructor(attrs: {
@@ -22,6 +23,7 @@ export class TrainingModel {
     signature?: string;
     isTraining: boolean;
     combination: string[];
+    isCombinationCorrect?: boolean;
     isAutomata: boolean;
   }) {
     this.id = attrs.id;
@@ -34,6 +36,7 @@ export class TrainingModel {
     this.signature = attrs.signature;
     this.isTraining = attrs.isTraining;
     this.combination = attrs.combination;
+    this.isCombinationCorrect = attrs.isCombinationCorrect;
     this.isAutomata = attrs.isAutomata;
   }
 }

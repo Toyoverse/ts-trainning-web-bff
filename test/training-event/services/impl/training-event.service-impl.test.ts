@@ -16,6 +16,7 @@ describe('Training event service tests', () => {
       save: jest.fn(),
       getCurrent: jest.fn(),
       isDatesConflicting: jest.fn(),
+      getById: jest.fn(),
     };
 
   const trainingBlowService = {
@@ -213,6 +214,53 @@ describe('Training event service tests', () => {
     test('When get current training and there is no current training then throw not found exception', async () => {
       trainingEventRepository.getCurrent.mockResolvedValue(undefined);
       const t = async () => await trainingEventService.getCurrent();
+      await expect(t).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('getById', () => {
+    it('should return training event', async () => {
+      const id = 'k3f8i3';
+      const model = new TrainingEventModel({
+        id,
+        name: 'Training Event',
+        startAt: new Date('2020-02-02'),
+        endAt: new Date('2020-02-09'),
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
+        isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
+        inTrainingMessage: 'Training Doge',
+        losesMessage: 'Sorry, you lost',
+        rewardMessage: 'You won, congratulations',
+        blows: ['1', '2'],
+        blowsConfig: [
+          { duration: 4, qty: 3 },
+          { duration: 5, qty: 4 },
+        ],
+      });
+
+      when(trainingEventRepository.getById)
+        .calledWith(id)
+        .mockResolvedValue(model);
+
+      const resp = await trainingEventService.getById(id);
+
+      expect(resp).toEqual(model);
+    });
+
+    it('should throw not found error when there is no training with id', async () => {
+      const id = 'k3f8i3';
+
+      when(trainingEventRepository.getById)
+        .calledWith(id)
+        .mockResolvedValue(undefined);
+
+      const t = async () => trainingEventService.getById(id);
+
       await expect(t).rejects.toThrow(NotFoundError);
     });
   });

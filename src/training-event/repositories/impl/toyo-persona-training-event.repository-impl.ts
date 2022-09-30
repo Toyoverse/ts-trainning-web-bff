@@ -86,7 +86,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
     return toyoPersonaTrainingEventParseObject;
   }
 
-  async getByTrainingEventAndToyoPersona(
+  async getByTrainingEventAndPersona(
     trainingEventId: string,
     toyoPersonaId: string,
   ): Promise<ToyoPersonaTrainingEventModel> {

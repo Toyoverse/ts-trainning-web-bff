@@ -9,12 +9,13 @@ import {
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
 import { ToyoPersonaTrainingEventModel } from 'src/training-event/models/toyo-persona-training-event.model';
+import { ToyoPersonaTrainingEventRepository } from 'src/training-event/repositories/toyo-persona-training-event.repository';
 import { ToyoPersonaTrainingEventServiceImpl } from 'src/training-event/services/impl/toyo-persona-training-event.service-impl';
 
 describe('Toyo persona training event service impl tests', () => {
-  const mockRepository = {
+  const mockRepository: jest.Mocked<ToyoPersonaTrainingEventRepository> = {
     save: jest.fn(),
-    getByTrainingEventAndToyoPersona: jest.fn(),
+    getByTrainingEventAndPersona: jest.fn(),
   };
 
   const mockTrainingEventService = {
@@ -183,7 +184,7 @@ describe('Toyo persona training event service impl tests', () => {
         id: trainingEventId,
       });
 
-      when(mockRepository.getByTrainingEventAndToyoPersona)
+      when(mockRepository.getByTrainingEventAndPersona)
         .calledWith(trainingEventId, toyoPersonaId)
         .mockResolvedValue(repositoryResponse);
 
@@ -207,9 +208,7 @@ describe('Toyo persona training event service impl tests', () => {
     test('When there is no current toyo persona training event then throw not found error', async () => {
       const toyoPersonaId = '1';
 
-      mockRepository.getByTrainingEventAndToyoPersona.mockResolvedValue(
-        undefined,
-      );
+      mockRepository.getByTrainingEventAndPersona.mockResolvedValue(undefined);
 
       const t = async () => await service.getCurrent(toyoPersonaId);
 

@@ -1,3 +1,5 @@
+import { ArrayMaxSize } from 'class-validator';
+
 export function compareArrays(arr1: any[], arr2: any[]) {
   const combination = {
     correct: arr2,

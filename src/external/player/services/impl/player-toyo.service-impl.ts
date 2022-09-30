@@ -1,4 +1,5 @@
 import * as Parse from 'parse/node';
+import { parse } from 'path';
 import { classes } from 'src/config/back4app';
 import { UnauthorizedError } from 'src/errors/unauthorized.error';
 import { ToyoDto } from '../../dto/toyo.dto';
@@ -43,6 +44,7 @@ export class PlayerToyoServiceImpl implements PlayerToyoService {
     return new ToyoDto({
       id: parseObject.id,
       tokenId: parseObject.get('tokenId'),
+      personaId: parseObject.get('toyoPersonaOrigin'),
     });
   }
 }

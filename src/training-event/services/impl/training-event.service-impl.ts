@@ -10,6 +10,7 @@ import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-even
 import { ConstraintViolationError } from 'src/errors/constraint-violation.error';
 import { TrainingBlowService } from 'src/training-blow/services/training-blow.service';
 import { NotFoundError } from 'src/errors';
+import { TrainingEventDto } from 'src/training-event/dto/training-event/dto';
 
 @Injectable()
 export class TrainingEventServiceImpl implements TrainingEventService {
@@ -84,13 +85,13 @@ export class TrainingEventServiceImpl implements TrainingEventService {
     });
   }
 
-  async getById(id: string): Promise<Parse.Object<Parse.Attributes>> {
+  async getById(id: string): Promise<TrainingEventDto> {
     const model = await this._repository.getById(id);
 
     if (!model) {
       throw new NotFoundError(`There is no training event with id ${id}`);
     }
 
-    return model;
+    return new TrainingEventDto(model);
   }
 }

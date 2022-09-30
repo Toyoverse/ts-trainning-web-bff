@@ -26,11 +26,14 @@ export interface TrainingRepository {
     trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingResponseDto>;
-  save(model: TrainingModel): Promise<TrainingModel>;
+
   getSignature(
     training: Parse.Object<Parse.Attributes>,
     toyo: Parse.Object<Parse.Attributes>,
     trainingEvent: Parse.Object<Parse.Attributes>,
     toyoPersonaTrainingEvent: ToyoPersonaTrainingEventGetCurrentDto,
   ): Promise<TrainingResponseDto>;
+
+  save(model: TrainingModel): Promise<TrainingModel>;
+  getById(id: string): Promise<TrainingModel>;
 }

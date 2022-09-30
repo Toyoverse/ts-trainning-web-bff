@@ -4,7 +4,7 @@ export interface ToyoPersonaTrainingEventRepository {
   save(
     model: ToyoPersonaTrainingEventModel,
   ): Promise<ToyoPersonaTrainingEventModel>;
-  getByTrainingEventAndToyoPersona(
+  getByTrainingEventAndPersona(
     trainingEventId: string,
     toyoPersonaId: string,
   ): Promise<ToyoPersonaTrainingEventModel>;

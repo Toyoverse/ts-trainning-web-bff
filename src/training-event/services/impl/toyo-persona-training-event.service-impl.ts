@@ -20,6 +20,7 @@ import { CardTrainingRewardModel } from 'src/training-event/models/card-training
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 import { TrainingEventService } from '../training-event.service';
 import { CardTrainingRewardService } from '../card-training-reward.service';
+import { ToyoPersonaTrainingEventDto } from 'src/training-event/dto/toyo-persona-training-event/dto';
 
 @Injectable()
 export class ToyoPersonaTrainingEventServiceImpl
@@ -92,7 +93,7 @@ export class ToyoPersonaTrainingEventServiceImpl
   ): Promise<ToyoPersonaTrainingEventGetCurrentDto> {
     const trainingEvent = await this._trainingEventService.getCurrent();
 
-    const model = await this._repository.getByTrainingEventAndToyoPersona(
+    const model = await this._repository.getByTrainingEventAndPersona(
       trainingEvent.id,
       toyoPersonaId,
     );
@@ -105,20 +106,19 @@ export class ToyoPersonaTrainingEventServiceImpl
     return new ToyoPersonaTrainingEventGetCurrentDto(model as any);
   }
 
-  async getToyoPersonaEventByEventId(
-    toyoPersonaId: string,
+  async getByTrainingEventAndPersona(
     trainingEventId: string,
-  ): Promise<ToyoPersonaTrainingEventGetCurrentDto> {
-    const model = await this._repository.getByTrainingEventAndToyoPersona(
+    toyoPersonaId: string,
+  ): Promise<ToyoPersonaTrainingEventDto> {
+    const model = await this._repository.getByTrainingEventAndPersona(
       trainingEventId,
       toyoPersonaId,
     );
 
     if (!model) {
-      throw new NotFoundError(
-        'There is no current training event for toyo persona',
-      );
+      throw new NotFoundError('There is no training event for persona');
     }
-    return new ToyoPersonaTrainingEventGetCurrentDto(model as any);
+
+    return new ToyoPersonaTrainingEventDto(model as any);
   }
 }

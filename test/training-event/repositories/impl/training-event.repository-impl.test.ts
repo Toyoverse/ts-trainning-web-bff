@@ -279,4 +279,69 @@ describe('Training event repository tests', () => {
       expect(result).toBeTruthy();
     });
   });
+
+  describe('getById', () => {
+    it('should return model', async () => {
+      const id = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
+      const now = new Date();
+
+      const expectedModel = new TrainingEventModel({
+        id,
+        name: 'Training Event',
+        startAt: now,
+        endAt: now,
+        story:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam euismod ante a ante sagittis ultricies.',
+        bondReward: 0.75,
+        bonusBondReward: 1.25,
+        isOngoing: false,
+        toyoTrainingConfirmationMessage:
+          'Are you sure you want to start training?',
+        inTrainingMessage: 'Training Doge',
+        losesMessage: 'Sorry, you lost',
+        rewardMessage: 'You won, congratulations',
+        blows: ['1', '2'],
+        blowsConfig: [
+          new BlowConfigModel({ duration: 3, qty: 5 }),
+          new BlowConfigModel({ duration: 4, qty: 6 }),
+        ],
+      });
+
+      const mockParseQueryConstructor = jest.mocked(Parse.Query);
+
+      const mockTrainingEventParseObject = {
+        id: undefined,
+        get: jest.fn(),
+      };
+
+      const mockTrainingEventParseQuery = {
+        equalTo: jest.fn(),
+        lessThanOrEqualTo: jest.fn(),
+        greaterThan: jest.fn(),
+        first: jest.fn(),
+      };
+
+      when(mockParseQueryConstructor)
+        .calledWith(classes.TRAINING_EVENT)
+        .mockReturnValue(mockTrainingEventParseQuery as unknown as any);
+
+      mockTrainingEventParseObject.id = id;
+      mockTrainingEventParseObject.get.mockImplementation(
+        (key) => expectedModel[key],
+      );
+
+      mockTrainingEventParseQuery.first.mockResolvedValue(
+        mockTrainingEventParseObject,
+      );
+
+      const model = await repository.getById(id);
+
+      expect(mockTrainingEventParseQuery.equalTo).toBeCalledWith(
+        'objectId',
+        id,
+      );
+
+      expect(model).toEqual(expectedModel);
+    });
+  });
 });

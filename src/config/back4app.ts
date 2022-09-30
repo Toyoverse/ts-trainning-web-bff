@@ -9,6 +9,7 @@ export enum classes {
   TOYO_TRAINING = 'ToyoTraining',
   TRAINING_BLOW = 'TrainingBlow',
   TRAINING_EVENT = 'TrainingEvent',
+  TRAINING_EVENT_WINNER = 'TrainingEventWinner',
 }
 
 export const config = () => {

@@ -9,9 +9,7 @@ import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/to
 import { classes } from 'src/config/back4app';
 import { TrainingModel } from 'src/training/models/training.model';
 import { TrainingResponseDto } from 'src/training/dto/training-response.dto';
-import { ListTrainingDto } from 'src/training/dto/list.dto';
 import { request, gql } from 'graphql-request';
-import { ToyoDto } from 'src/external/player/dto/toyo.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Web3Eth = require('web3-eth');
@@ -19,6 +17,27 @@ const Web3Eth = require('web3-eth');
 export class TrainingRepositoryImpl implements TrainingRepository {
   private readonly DATABASE_CLASS = 'ToyoTraining';
   private readonly THEGRAPH_URL = process.env.THEGRAPH_URL;
+
+  async getById(id: string): Promise<TrainingModel> {
+    const parseQuery = new Parse.Query(classes.TOYO_TRAINING);
+    parseQuery.equalTo('objectId', id);
+
+    const parseObject = await parseQuery.first();
+
+    return new TrainingModel({
+      id: parseObject.id,
+      trainingEventId: parseObject.get('trainingEvent').id,
+      playerId: parseObject.get('player').id,
+      toyoId: parseObject.get('toyo').id,
+      startAt: parseObject.get('startAt'),
+      endAt: parseObject.get('endAt'),
+      claimedAt: parseObject.get('claimedAt'),
+      combination: parseObject.get('combination'),
+      isTraining: parseObject.get('isTraining'),
+      isAutomata: parseObject.get('isAutomata'),
+      signature: parseObject.get('signature'),
+    });
+  }
 
   async save(model: TrainingModel): Promise<TrainingModel> {
     const trainingEventParseObject = new Parse.Object(classes.TRAINING_EVENT, {
@@ -34,6 +53,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     });
 
     const trainingParseObject = new Parse.Object(classes.TOYO_TRAINING);
+    trainingEventParseObject.id = model.id;
     trainingParseObject.set('trainingEvent', trainingEventParseObject);
     trainingParseObject.set('toyo', toyoParseObject);
     trainingParseObject.set('player', playerParseObject);

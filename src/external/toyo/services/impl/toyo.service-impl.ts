@@ -1,9 +1,26 @@
 import * as Parse from 'parse/node';
 import { classes } from 'src/config/back4app';
 import { NotFoundError } from 'src/errors';
+import { ToyoDto } from '../../dto/toyo/dto';
 import { ToyoService } from '../toyo.service';
 
 export class ToyoServiceImpl implements ToyoService {
+  async getById(id: string): Promise<ToyoDto> {
+    const parseQuery = new Parse.Query(classes.TOYO);
+    parseQuery.equalTo('objectId', id);
+
+    const toyoParseObject = await parseQuery.first();
+
+    if (!toyoParseObject) {
+      throw new NotFoundError(`Toyo with id ${id} not found`);
+    }
+
+    return new ToyoDto({
+      id: toyoParseObject.id,
+      tokenId: toyoParseObject.get('tokenId'),
+      personaId: toyoParseObject.get('toyoPersonaOrigin').id,
+    });
+  }
   async getToyoById(toyoId: string): Promise<Parse.Object<Parse.Attributes>> {
     const parseQuery = new Parse.Query(classes.TOYO);
     parseQuery.equalTo('objectId', toyoId);

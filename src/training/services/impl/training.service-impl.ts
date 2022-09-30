@@ -13,10 +13,17 @@ import { PlayerToyoService } from 'src/external/player/services/player-toyo.serv
 import { ForbiddenError } from 'src/errors/forbidden.error';
 import { TrainingStartRequestDto } from 'src/training/dto/training-start-request.dto';
 import { TrainingModel } from 'src/training/models/training.model';
-import { ConstraintViolationError, InternalServerError } from 'src/errors';
+import {
+  BadRequestError,
+  ConstraintViolationError,
+  InternalServerError,
+  NotFoundError,
+} from 'src/errors';
 import { TrainingResponseDto } from 'src/training/dto/training-response.dto';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ListTrainingDto } from 'src/training/dto/list.dto';
+import { arraysEquals } from 'src/utils/general/arrays';
+import { classes } from 'src/config/back4app';
 
 @Injectable()
 export class TrainingServiceImpl implements TrainingService {
@@ -38,7 +45,6 @@ export class TrainingServiceImpl implements TrainingService {
   ) {}
 
   async start(dto: TrainingStartRequestDto): Promise<TrainingResponseDto> {
-    // FIXME - handle exceptions more elegantly
     try {
       const toyo = await this._getPlayerToyoByToken(
         dto.playerId,
@@ -173,15 +179,15 @@ export class TrainingServiceImpl implements TrainingService {
       );
 
       const toyoPersonaTrainingEvent =
-        await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
-          toyoPersona.id,
+        await this.toyoPersonaTrainingEventService.getByTrainingEventAndPersona(
           trainingEvent.id,
+          toyoPersona.id,
         );
 
       const model = await this.trainingRepository.getSignature(
         training,
         toyo,
-        trainingEvent,
+        new Parse.Object(classes.TRAINING_EVENT, { id: trainingEvent.id }),
         toyoPersonaTrainingEvent,
       );
 
@@ -190,7 +196,7 @@ export class TrainingServiceImpl implements TrainingService {
       if (e.name === Error.name || e.name === InternalServerError.name) {
         throw new InternalServerError(
           `Internal server error found when tried to close the training ${id} onwed by player ${loggedPlayerId} `,
-          { cause: e.message, ctx: TrainingServiceImpl.name },
+          { cause: e.message, ctx: this.name },
         );
       }
 
@@ -203,38 +209,40 @@ export class TrainingServiceImpl implements TrainingService {
     loggedPlayerId: string,
   ): Promise<TrainingResponseDto> {
     try {
-      const training = await this.trainingRepository.getTrainingById(id);
-      const playerId = training.get('player').id;
+      let training = await this.trainingRepository.getById(id);
 
-      if (!training || training.get('claimedAt') !== undefined) {
-        throw new NotFoundException('Training not found or already claimed');
+      if (!training) {
+        throw new NotFoundError('Training not found with id ' + id, {
+          ctx: this.name,
+        });
       }
 
-      if (loggedPlayerId !== playerId) {
-        throw new ForbiddenError(
-          'You cannot close a training of toyo that you do not have',
-        );
+      if (loggedPlayerId !== training.playerId) {
+        throw new ForbiddenError('Forbidden', { ctx: this.name });
       }
 
-      const toyoId = training.get('toyo').id;
-      const toyo = await this.toyoService.getToyoById(toyoId);
+      if (!!training.claimedAt) {
+        throw new BadRequestError('Training already claimed', {
+          ctx: this.name,
+        });
+      }
 
-      const trainingEvent = await this.trainingEventService.getById(
-        training.get('trainingEvent').id,
-      );
+      training.claimedAt = new Date();
+      training.isTraining = false;
 
-      const model = await this.trainingRepository.close(
-        training,
-        toyo,
-        trainingEvent,
-      );
+      training = await this.trainingRepository.save(training);
 
-      return model;
+      const response = new TrainingResponseDto({
+        ...training,
+        signature: undefined,
+      });
+
+      return response;
     } catch (e) {
       if (e.name === Error.name || e.name === InternalServerError.name) {
         throw new InternalServerError(
           `Internal server error found when tried to close the training ${id} onwed by player ${loggedPlayerId} `,
-          { cause: e.message, ctx: TrainingServiceImpl.name },
+          { cause: e.message, ctx: this.name },
         );
       }
 
@@ -252,46 +260,61 @@ export class TrainingServiceImpl implements TrainingService {
     loggedPlayerId: string,
   ): Promise<TrainingResponseDto> {
     try {
-      const training = await this.trainingRepository.getTrainingById(id);
+      const training = await this.trainingRepository.getById(id);
 
       if (!training) {
-        throw new NotFoundException('Training not found');
+        throw new NotFoundError('Training not found');
       }
 
-      const playerId = training.get('player').id;
+      if (loggedPlayerId !== training.playerId) {
+        throw new ForbiddenError('Forbidden');
+      }
 
-      if (loggedPlayerId !== playerId) {
-        throw new ForbiddenError(
-          'You cannot get the training result of toyo that you do not have',
+      const toyo = await this.toyoService.getById(training.toyoId);
+
+      const personaTrainingEvent =
+        await this.toyoPersonaTrainingEventService.getByTrainingEventAndPersona(
+          training.trainingEventId,
+          toyo.personaId,
         );
-      }
 
-      const toyoId = training.get('toyo').id;
-      const toyo = await this.toyoService.getToyoById(toyoId);
+      const eventCombination = personaTrainingEvent.combination;
+      const playerCombination = training.combination;
 
-      const toyoPersona = await this.toyoPersonaService.getById(
-        toyo.get('toyoPersonaOrigin').id,
+      const combinationResult = this._getCombinationResult(
+        playerCombination,
+        eventCombination,
       );
 
       const trainingEvent = await this.trainingEventService.getById(
-        training.get('trainingEvent').id,
+        training.trainingEventId,
       );
 
-      const toyoPersonaTrainingEvent =
-        await this.toyoPersonaTrainingEventService.getToyoPersonaEventByEventId(
-          toyoPersona.id,
-          trainingEvent.id,
-        );
-
-      const model = await this.trainingRepository.getResult(
-        training,
-        trainingEvent,
-        toyoPersonaTrainingEvent,
+      const trainingBondReward = this._calculateBondReward(
+        combinationResult.isCombinationCorrect,
+        trainingEvent.bondReward,
+        trainingEvent.bonusBondReward,
       );
 
-      return model;
+      training.isCombinationCorrect = combinationResult.isCombinationCorrect;
+      await this.trainingRepository.save(training);
+
+      return new TrainingResponseDto({
+        id: training.id,
+        startAt: training.startAt,
+        endAt: training.endAt,
+        claimedAt: training.claimedAt,
+        bond: trainingBondReward,
+        toyoTokenId: toyo.tokenId,
+        signature: undefined,
+        combination: training.combination,
+        isAutomata: false,
+        card: personaTrainingEvent.cardReward,
+        isCombinationCorrect: combinationResult.isCombinationCorrect,
+        combinationResult: combinationResult.result,
+      });
     } catch (e) {
-      if (e instanceof InternalServerError || e instanceof Error) {
+      if (e.name === Error.name || e.name === InternalServerError.name) {
         throw new InternalServerError(
           `Internal server error found when tried to get result for training ${id} owned by player ${loggedPlayerId} `,
           { cause: e.message, ctx: TrainingServiceImpl.name },
@@ -300,5 +323,49 @@ export class TrainingServiceImpl implements TrainingService {
 
       throw e;
     }
+  }
+
+  private _getCombinationResult(
+    playerCombination: string[],
+    eventCombination: string[],
+  ) {
+    const combination = {
+      correct: eventCombination,
+      user: playerCombination,
+      result: [],
+    };
+
+    const userCombination = [...combination.correct];
+
+    for (const [index, blow] of playerCombination.entries()) {
+      const blowResult = { includes: false, position: false, blow };
+
+      if (eventCombination.indexOf(blow) === index) {
+        blowResult.position = true;
+        blowResult.includes = true;
+      } else if (userCombination.includes(blow)) {
+        blowResult.includes = true;
+        userCombination.splice(userCombination.indexOf(blow), 1);
+      }
+
+      combination.result.push(blowResult);
+    }
+
+    return {
+      user: playerCombination,
+      result: combination.result,
+      isCombinationCorrect: arraysEquals(playerCombination, eventCombination),
+    };
+  }
+
+  private _calculateBondReward(
+    isCorrectCombination: boolean,
+    bondReward: number,
+    bonusBondReward: number,
+  ) {
+    if (isCorrectCombination) {
+      return bondReward + bonusBondReward;
+    }
+    return bondReward;
   }
 }

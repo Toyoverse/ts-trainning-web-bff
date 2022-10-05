@@ -1,11 +1,14 @@
 import { ListTrainingDto } from '../dto/list.dto';
-import { TrainingStartDto } from '../dto/start.dto';
-import { TrainingModel } from '../models/training.model';
+import { TrainingStartRequestDto } from '../dto/training-start-request.dto';
+import { TrainingResponseDto } from '../dto/training-response.dto';
 
 export interface TrainingService {
-  start(id: TrainingStartDto): Promise<TrainingModel>;
-  close(id: string, loggedPlayerId: string): Promise<TrainingModel>;
+  start(id: TrainingStartRequestDto): Promise<TrainingResponseDto>;
+  close(id: string, loggedPlayerId: string): Promise<TrainingResponseDto>;
   list(id: string): Promise<ListTrainingDto[]>;
-  getResult(id: string, loggedPlayerId: string): Promise<TrainingModel>;
-  getSignature(id: string, loggedPlayerId: string): Promise<TrainingModel>;
+  getResult(id: string, loggedPlayerId: string): Promise<TrainingResponseDto>;
+  getSignature(
+    id: string,
+    loggedPlayerId: string,
+  ): Promise<TrainingResponseDto>;
 }

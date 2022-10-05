@@ -1,26 +1,22 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import di from '../../di';
 import toyoDi from 'src/external/toyo/di';
 import playerDi from 'src/external/player/di';
 import trainingEventDi from 'src/training-event/di';
 import { TrainingRepository } from '../../../training/repositories/training.repository';
 import { TrainingService } from '../training.service';
-import { TrainingStartDto } from '../../../training/dto/start.dto';
-import { TrainingModel } from '../../../training/models/training.model';
-import { PlayerService } from 'src/external/player/services/player.service';
 import { ToyoService } from 'src/external/toyo/services/toyo.service';
 import { TrainingEventService } from 'src/training-event/services/training-event.service';
 import { ToyoPersonaService } from 'src/external/toyo/services/toyo-persona.service';
 import { ToyoPersonaTrainingEventService } from 'src/training-event/services/toyo-persona-training-event.service';
-import { ListTrainingDto } from 'src/training/dto/list.dto';
 import { PlayerToyoService } from 'src/external/player/services/player-toyo.service';
 import { ForbiddenError } from 'src/errors/forbidden.error';
-import { InternalServerError } from 'src/errors';
+import { TrainingStartRequestDto } from 'src/training/dto/training-start-request.dto';
+import { TrainingModel } from 'src/training/models/training.model';
+import { ConstraintViolationError, InternalServerError } from 'src/errors';
+import { TrainingResponseDto } from 'src/training/dto/training-response.dto';
+import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
+import { ListTrainingDto } from 'src/training/dto/list.dto';
 
 @Injectable()
 export class TrainingServiceImpl implements TrainingService {
@@ -41,51 +37,51 @@ export class TrainingServiceImpl implements TrainingService {
     private toyoPersonaService: ToyoPersonaService,
   ) {}
 
-  async start(dto: TrainingStartDto): Promise<TrainingModel> {
+  async start(dto: TrainingStartRequestDto): Promise<TrainingResponseDto> {
+    // FIXME - handle exceptions more elegantly
     try {
-      const toyos = await this.playerToyoService.getPlayerToyos(dto.playerId);
+      const toyo = await this._getPlayerToyoByToken(
+        dto.playerId,
+        dto.toyoTokenId,
+        dto.isAutomata,
+      );
 
-      const [toyo] = toyos.filter((toyo) => toyo.tokenId === dto.toyoTokenId);
-      if (!toyo) {
-        throw new ForbiddenError(
-          'You cannot start a training of toyo that you do not have',
-        );
-      }
-
-      const isToyoAlreadyTraining =
-        await this.trainingRepository.verifyIfToyoIsTraining(toyo.id);
-
-      if (isToyoAlreadyTraining) {
-        throw new BadRequestException(
-          'You cannot start a training for a toyo that is already training',
-        );
-      }
+      this._checkOwnership(toyo);
+      await this._checkIfToyoIsInTraining(toyo);
 
       const currentTrainingEvent = await this.trainingEventService.getCurrent();
 
-      const config = currentTrainingEvent.blowsConfig.find(
-        (i) => i.qty === dto.combination.length,
-      );
-
-      if (!config) {
-        throw new NotFoundException('Could not find the training config info');
-      }
-
-      const training = await this.trainingRepository.start(
-        toyo.id,
-        dto.playerId,
-        currentTrainingEvent.id,
-        config,
+      const blowConfig = this._getBlowConfig(
+        currentTrainingEvent,
         dto.combination,
       );
 
-      if (!training) {
-        throw new InternalServerError(
-          'An error occurred while trying to start the training',
-        );
-      }
+      const startAt = new Date();
+      const endAt = new Date(
+        startAt.getTime() + blowConfig.duration * (60 * 1000),
+      );
 
-      return training;
+      const model = new TrainingModel({
+        playerId: dto.playerId,
+        toyoId: toyo.id,
+        trainingEventId: currentTrainingEvent.id,
+        startAt: startAt,
+        endAt: endAt,
+        combination: dto.combination,
+        isTraining: true,
+        isAutomata: dto.isAutomata,
+      });
+
+      const { id } = await this.trainingRepository.save(model);
+
+      return new TrainingResponseDto({
+        id,
+        startAt,
+        endAt,
+        toyoTokenId: dto.toyoTokenId,
+        combination: model.combination,
+        isAutomata: model.isAutomata,
+      });
     } catch (e) {
       if (e.name === Error.name || e.name === InternalServerError.name) {
         throw new InternalServerError(
@@ -98,10 +94,59 @@ export class TrainingServiceImpl implements TrainingService {
     }
   }
 
+  private async _getPlayerToyoByToken(
+    playerId: string,
+    tokenId: string,
+    isAutomata: boolean,
+  ) {
+    let toyos = [];
+
+    if (!isAutomata) {
+      toyos = await this.playerToyoService.getPlayerToyos(playerId);
+    } else {
+      toyos = await this.playerToyoService.getPlayerToyoAutomatas(playerId);
+    }
+
+    const [toyo] = toyos.filter((toyo) => toyo.tokenId === tokenId);
+    return toyo;
+  }
+
+  private _checkOwnership(toyo: any) {
+    if (!toyo) {
+      throw new ForbiddenError('Access denied');
+    }
+  }
+
+  private _getBlowConfig(
+    currentTrainingEvent: TrainingEventGetCurrentDto,
+    combination: string[],
+  ) {
+    const blowConfig = currentTrainingEvent.blowsConfig.find(
+      (i) => i.qty === combination.length,
+    );
+
+    if (!blowConfig) {
+      throw new ConstraintViolationError(
+        'Blow config not found for the amount of blows',
+      );
+    }
+    return blowConfig;
+  }
+
+  private async _checkIfToyoIsInTraining(toyo: any) {
+    const isToyoAlreadyTraining =
+      await this.trainingRepository.verifyIfToyoIsTraining(toyo.id);
+
+    if (isToyoAlreadyTraining) {
+      throw new ConstraintViolationError('Toyo already in training');
+    }
+  }
+
+  // FIXME - handle exceptions more elegantly
   async getSignature(
     id: string,
     loggedPlayerId: string,
-  ): Promise<TrainingModel> {
+  ): Promise<TrainingResponseDto> {
     try {
       const training = await this.trainingRepository.getTrainingById(id);
       const playerId = training.get('player').id;
@@ -153,7 +198,10 @@ export class TrainingServiceImpl implements TrainingService {
     }
   }
 
-  async close(id: string, loggedPlayerId: string): Promise<TrainingModel> {
+  async close(
+    id: string,
+    loggedPlayerId: string,
+  ): Promise<TrainingResponseDto> {
     try {
       const training = await this.trainingRepository.getTrainingById(id);
       const playerId = training.get('player').id;
@@ -199,7 +247,10 @@ export class TrainingServiceImpl implements TrainingService {
     return data;
   }
 
-  async getResult(id: string, loggedPlayerId: string): Promise<TrainingModel> {
+  async getResult(
+    id: string,
+    loggedPlayerId: string,
+  ): Promise<TrainingResponseDto> {
     try {
       const training = await this.trainingRepository.getTrainingById(id);
 

@@ -21,6 +21,24 @@ export class PlayerToyoServiceImpl implements PlayerToyoService {
     return toyoParseObjects.map(this._toModel);
   }
 
+  async getPlayerToyoAutomatas(playerId: string): Promise<ToyoDto[]> {
+    const parseQuery = new Parse.Query(classes.PLAYERS).include(
+      'toyoAutomatas',
+    );
+    parseQuery.equalTo('objectId', playerId);
+
+    const parseObject = await parseQuery.first();
+
+    if (!parseObject) {
+      throw new UnauthorizedError(`Player not found with id ${playerId}`);
+    }
+
+    const toyoParseRelation: Parse.Relation = parseObject.get('toyoAutomatas');
+    const toyoParseObjects = await toyoParseRelation.query().find();
+
+    return toyoParseObjects.map(this._toModel);
+  }
+
   private _toModel(parseObject: Parse.Object<Parse.Attributes>): ToyoDto {
     return new ToyoDto({
       id: parseObject.id,

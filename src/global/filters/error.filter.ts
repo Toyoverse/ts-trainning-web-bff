@@ -28,7 +28,6 @@ const errorsHttpExceptions = new Map<string, ClassConstructor<any>>([
   [ForbiddenError.name, ForbiddenException],
   [UnauthorizedError.name, UnauthorizedException],
   [InternalServerError.name, InternalServerErrorException],
-  [Error.name, InternalServerErrorException],
 ]);
 
 @Catch(Error)
@@ -44,7 +43,9 @@ export class ApiHttpErrorFilter implements ExceptionFilter {
       return;
     }
 
-    const HttpExceptionClass = errorsHttpExceptions.get(err.name);
+    const HttpExceptionClass =
+      errorsHttpExceptions.get(err.name) || InternalServerErrorException;
+
     const httpException: HttpException = new HttpExceptionClass(err.message);
 
     response
@@ -65,7 +66,7 @@ export class ApiHttpErrorFilter implements ExceptionFilter {
         );
       } else if (
         err instanceof InternalServerErrorException ||
-        err instanceof Error
+        err.name === Error.name
       ) {
         this.logger.error(err.message, err.stack);
       }

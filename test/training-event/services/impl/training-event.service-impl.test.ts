@@ -8,20 +8,22 @@ import {
 import { TrainingEventServiceImpl } from 'src/training-event/services/impl/training-event.service-impl';
 import { ConstraintViolationError, NotFoundError } from 'src/errors';
 import { when } from 'jest-when';
+import { TrainingEventRepository } from 'src/training-event/repositories/training-event.repository';
 
 describe('Training event service tests', () => {
-  const trainingEventRepository = {
-    save: jest.fn(),
-    getCurrent: jest.fn(),
-    isDatesConflicting: jest.fn(),
-  };
+  const trainingEventRepository: Partial<jest.Mocked<TrainingEventRepository>> =
+    {
+      save: jest.fn(),
+      getCurrent: jest.fn(),
+      isDatesConflicting: jest.fn(),
+    };
 
   const trainingBlowService = {
     getById: jest.fn(),
   };
 
   const trainingEventService = new TrainingEventServiceImpl(
-    trainingEventRepository,
+    trainingEventRepository as any,
     trainingBlowService as any,
   );
 

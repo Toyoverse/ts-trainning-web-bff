@@ -18,6 +18,8 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentPlayer } from 'src/decorators/current-player.decorator';
+import { PlayerDto } from 'src/external/player/dto/player.dto';
 import { CurrentPlayerInterceptor } from 'src/interceptors/current-player.interceptor';
 import {
   CreateResponse,
@@ -25,7 +27,7 @@ import {
   SuccessResponse,
 } from 'src/utils/http/responses';
 import di from '../di';
-import { TrainingStartDto } from '../dto/start.dto';
+import { TrainingStartRequestDto } from '../dto/training-start-request.dto';
 import { TrainingService } from '../services/training.service';
 
 @ApiTags('training')
@@ -51,17 +53,17 @@ export class TrainingController {
   })
   @Post()
   async start(
-    @Req() req: any,
-    @Body() body: TrainingStartDto,
+    @CurrentPlayer() player: PlayerDto,
+    @Body() body: TrainingStartRequestDto,
   ): Promise<CreateResponse> {
-    body.playerId = req.player.id;
+    body.playerId = player.id;
 
-    const model = await this.trainingService.start(body);
+    const responseDto = await this.trainingService.start(body);
 
     return new CreateResponse({
       statusCode: HttpStatus.CREATED,
       message: 'Training successfully started',
-      body: model,
+      body: responseDto,
     });
   }
 

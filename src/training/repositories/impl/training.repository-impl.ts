@@ -228,8 +228,14 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         const trainingsToReset = trainings.filter((training) => {
           return !training.get('isTraining');
         });
+        const onchain = await this.getTokenOwnerEntityByTokenId(
+          trainings[0].get('toyo').get('tokenId'),
+        );
 
-        if (claimedsOnChain.length > trainingsToReset.length) {
+        if (
+          claimedsOnChain.length > trainingsToReset.length ||
+          !onchain[0].isStaked
+        ) {
           trainings.sort((a, b) => {
             return (
               new Date(b.get('updatedAt')).getTime() -

@@ -79,6 +79,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
       'correctBlowsCombination',
       model.correctBlowsCombinationIds,
     );
+    toyoPersonaTrainingEventParseObject.set('isAutomata', model.isAutomata);
     toyoPersonaTrainingEventParseObject.set(
       'cardReward',
       cardRewardParseObject.toPointer(),
@@ -89,6 +90,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
   async getByTrainingEventAndPersona(
     trainingEventId: string,
     toyoPersonaId: string,
+    isAutomata: boolean,
   ): Promise<ToyoPersonaTrainingEventModel> {
     const parseQuery = new Parse.Query(classes.TOYO_PERSONA_TRAINING_EVENT);
 
@@ -98,6 +100,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
 
     parseQuery.equalTo('trainingEvent', trainingEventParseObject);
     parseQuery.equalTo('toyoPersona', toyoPersonaId);
+    parseQuery.equalTo('isAutomata', isAutomata);
 
     parseQuery.include('cardReward');
 
@@ -136,6 +139,7 @@ export class ToyoPersonaTrainingEventRepositoryImpl
         type: cardRewardParseObject.get('type'),
         cardCode: cardRewardParseObject.get('cardCode'),
       }),
+      isAutomata: toyoPersonaTrainingEventParseObject.get('isAutomata'),
     });
   }
 }

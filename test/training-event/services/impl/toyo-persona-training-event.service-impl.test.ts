@@ -6,6 +6,7 @@ import {
   CardTrainingRewardCreateDto,
   ToyoPersonaTrainingEventCreateDto,
 } from 'src/training-event/dto/toyo-persona-training-event/create.dto';
+import { ToyoPersonaTrainingEventDto } from 'src/training-event/dto/toyo-persona-training-event/dto';
 import { ToyoPersonaTrainingEventGetCurrentDto } from 'src/training-event/dto/toyo-persona-training-event/get-current.dto';
 import { CardTrainingRewardModel } from 'src/training-event/models/card-training-reward.model';
 import { ToyoPersonaTrainingEventModel } from 'src/training-event/models/toyo-persona-training-event.model';
@@ -57,6 +58,7 @@ describe('Toyo persona training event service impl tests', () => {
           imageUrl: 'https://www.images.com/card1',
           cardCode: '23456f',
         }),
+        isAutomata: false,
       });
 
       mockToyoPersonaService.getById.mockResolvedValue({
@@ -85,6 +87,7 @@ describe('Toyo persona training event service impl tests', () => {
           cardId: input.cardReward.cardId,
           cardCode: input.cardReward.cardCode,
         }),
+        isAutomata: false,
       });
 
       mockRepository.save.mockResolvedValue(repositoryResponse);
@@ -159,6 +162,7 @@ describe('Toyo persona training event service impl tests', () => {
     test('Return current toyo persona training event', async () => {
       const toyoPersonaId = '1';
       const trainingEventId = '2';
+      const isAutomata = false;
 
       const repositoryResponse = new ToyoPersonaTrainingEventModel({
         id: '1',
@@ -174,6 +178,7 @@ describe('Toyo persona training event service impl tests', () => {
           rotText: 'Lorem impsum',
           type: '1',
         }),
+        isAutomata: isAutomata,
       });
 
       const expectedResponse = new ToyoPersonaTrainingEventGetCurrentDto(
@@ -185,32 +190,94 @@ describe('Toyo persona training event service impl tests', () => {
       });
 
       when(mockRepository.getByTrainingEventAndPersona)
-        .calledWith(trainingEventId, toyoPersonaId)
+        .calledWith(trainingEventId, toyoPersonaId, isAutomata)
         .mockResolvedValue(repositoryResponse);
 
-      const response = await service.getCurrent(toyoPersonaId);
+      const response = await service.getCurrent(toyoPersonaId, isAutomata);
 
       expect(response).toEqual(expectedResponse);
     });
 
     test('When there is no current training event then throw not found error', async () => {
       const toyoPersonaId = '1';
+      const isAutomata = false;
 
       mockTrainingEventService.getCurrent.mockRejectedValue(
         new NotFoundError(),
       );
 
-      const t = async () => await service.getCurrent(toyoPersonaId);
+      const t = async () => await service.getCurrent(toyoPersonaId, isAutomata);
 
       await expect(t).rejects.toThrow(NotFoundError);
     });
 
     test('When there is no current toyo persona training event then throw not found error', async () => {
       const toyoPersonaId = '1';
+      const isAutomata = false;
 
       mockRepository.getByTrainingEventAndPersona.mockResolvedValue(undefined);
 
-      const t = async () => await service.getCurrent(toyoPersonaId);
+      const t = async () => await service.getCurrent(toyoPersonaId, isAutomata);
+
+      await expect(t).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('Get training event for toyo persona', () => {
+    test('returns training event for persona', async () => {
+      const trainingEventId = 'fk39fd';
+      const personaId = 'fo3fada';
+      const isAutomata = false;
+
+      const repositoryResponse = new ToyoPersonaTrainingEventModel({
+        id: '1',
+        trainingEventId: trainingEventId,
+        toyoPersonaId: personaId,
+        correctBlowsCombinationIds: ['1', '2', '3'],
+        cardReward: new CardTrainingRewardModel({
+          id: '1',
+          cardId: '1',
+          description: '1',
+          name: 'Tatsu training event card',
+          imageUrl: 'https://www.images.com/card.jpeg',
+          rotText: 'Lorem impsum',
+          type: '1',
+        }),
+        isAutomata: false,
+      });
+
+      when(mockRepository.getByTrainingEventAndPersona)
+        .calledWith(trainingEventId, personaId, isAutomata)
+        .mockResolvedValue(repositoryResponse);
+
+      const resp = await service.getByTrainingEventAndPersona(
+        trainingEventId,
+        personaId,
+        isAutomata,
+      );
+
+      const expectedResponse = new ToyoPersonaTrainingEventDto(
+        repositoryResponse as any,
+      );
+
+      expect(resp).toEqual(expectedResponse);
+    });
+
+    test('throws not found error', async () => {
+      const trainingEventId = 'fk39fd';
+      const personaId = 'fo3fada';
+      const isAutomata = false;
+
+      when(mockRepository.getByTrainingEventAndPersona)
+        .calledWith(trainingEventId, personaId, isAutomata)
+        .mockResolvedValue(undefined);
+
+      const t = async () =>
+        service.getByTrainingEventAndPersona(
+          trainingEventId,
+          personaId,
+          isAutomata,
+        );
 
       await expect(t).rejects.toThrow(NotFoundError);
     });

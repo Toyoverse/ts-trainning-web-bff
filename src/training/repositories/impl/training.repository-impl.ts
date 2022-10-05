@@ -24,6 +24,26 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
     const parseObject = await parseQuery.first();
 
+    return this._buildModelFromParseObject(parseObject);
+  }
+
+  async getByPlayerAndInTraining(playerId: string): Promise<TrainingModel[]> {
+    const playerParseObject = new Parse.Object(classes.PLAYERS, {
+      id: playerId,
+    });
+
+    const parseQuery = new Parse.Query(classes.TOYO_TRAINING);
+    parseQuery.equalTo('player', playerParseObject);
+    parseQuery.equalTo('isTraining', true);
+
+    const parseObjects = await parseQuery.find();
+
+    return parseObjects.map(this._buildModelFromParseObject);
+  }
+
+  private _buildModelFromParseObject(
+    parseObject: Parse.Object<Parse.Attributes>,
+  ): TrainingModel {
     return new TrainingModel({
       id: parseObject.id,
       trainingEventId: parseObject.get('trainingEvent').id,
@@ -33,6 +53,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
       endAt: parseObject.get('endAt'),
       claimedAt: parseObject.get('claimedAt'),
       combination: parseObject.get('combination'),
+      isCombinationCorrect: parseObject.get('combinationCorrect'),
       isTraining: parseObject.get('isTraining'),
       isAutomata: parseObject.get('isAutomata'),
       signature: parseObject.get('signature'),
@@ -59,8 +80,11 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     trainingParseObject.set('player', playerParseObject);
     trainingParseObject.set('startAt', model.startAt);
     trainingParseObject.set('endAt', model.endAt);
-    trainingParseObject.set('combination', model.combination);
+    trainingParseObject.set('claimedAt', model.claimedAt);
+    trainingParseObject.set('signature', model.signature);
     trainingParseObject.set('isTraining', model.isTraining);
+    trainingParseObject.set('combination', model.combination);
+    trainingParseObject.set('combinationCorrect', model.isCombinationCorrect);
     trainingParseObject.set('isAutomata', model.isAutomata);
 
     await trainingParseObject.save();
@@ -266,6 +290,18 @@ export class TrainingRepositoryImpl implements TrainingRepository {
     } catch (e) {
       throw new InternalServerErrorException(e);
     }
+  }
+  async resetPlayerTrainings(playerId: string): Promise<void> {
+    const playerParseObject = new Parse.Object(classes.PLAYERS, {
+      id: playerId,
+    });
+
+    const query = new Parse.Query(classes.TOYO_TRAINING);
+    query.equalTo('player', playerParseObject);
+
+    const trainingsParseObjects = await query.find();
+
+    await this.resetTrainings(trainingsParseObjects);
   }
 
   async resetTrainings(
@@ -502,5 +538,27 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       trainingEventWinnerObj.destroy();
     }
+  }
+
+  async checkIfToyoWonEventPreviosly(
+    trainingEventId: string,
+    toyoId: string,
+    isAutomata: boolean,
+  ): Promise<boolean> {
+    const trainingEventParseObject = new Parse.Object(classes.TRAINING_EVENT, {
+      id: trainingEventId,
+    });
+
+    const toyoParseObject = new Parse.Object(classes.TOYO, { id: toyoId });
+
+    const parseQuery = new Parse.Query(classes.TOYO_TRAINING);
+    parseQuery.equalTo('trainingEvent', trainingEventParseObject);
+    parseQuery.equalTo('toyo', toyoParseObject);
+    parseQuery.equalTo('isAutomata', isAutomata);
+    parseQuery.equalTo('combinationCorrect', true);
+
+    const nTrainingsWon = await parseQuery.count();
+
+    return nTrainingsWon > 1;
   }
 }

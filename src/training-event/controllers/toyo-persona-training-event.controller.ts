@@ -60,7 +60,8 @@ export class ToyoPersonaTrainingEventController {
   @Get('/search/current')
   getCurrent(
     @Query('toyoPersona') toyoPersonaId: string,
+    @Query('isAutomata') isAutomata: boolean,
   ): Promise<ToyoPersonaTrainingEventGetCurrentDto> {
-    return this._service.getCurrent(toyoPersonaId);
+    return this._service.getCurrent(toyoPersonaId, isAutomata);
   }
 }

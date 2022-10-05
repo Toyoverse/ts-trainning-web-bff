@@ -1,3 +1,4 @@
+import { expectCt } from 'helmet';
 import { when } from 'jest-when';
 import * as Parse from 'parse/node';
 import { classes } from 'src/config/back4app';
@@ -25,6 +26,7 @@ describe('TrainingRepositoryImpl', () => {
         isTraining: true,
         isAutomata: false,
         signature: 'flk3zx3fgdfalkfda',
+        isCombinationCorrect: true,
       });
 
       const mockParseQueryConstructor = jest.mocked(Parse.Query);
@@ -78,6 +80,10 @@ describe('TrainingRepositoryImpl', () => {
         .mockReturnValue(expectedResponse.combination);
 
       when(mockParseObject.get)
+        .calledWith('combinationCorrect')
+        .mockReturnValue(expectedResponse.isCombinationCorrect);
+
+      when(mockParseObject.get)
         .calledWith('isTraining')
         .mockReturnValue(expectedResponse.isTraining);
 
@@ -89,6 +95,116 @@ describe('TrainingRepositoryImpl', () => {
 
       expect(mockParseQuery.equalTo).toBeCalledWith('objectId', id);
       expect(resp).toEqual(expectedResponse);
+    });
+  });
+
+  describe('getByPlayerAndInTraining', () => {
+    it('should return trainings', async () => {
+      const playerId = 'flevjv';
+
+      const expectedModels = [
+        new TrainingModel({
+          id: '125fa',
+          playerId,
+          toyoId: '1234f',
+          trainingEventId: 'fk3lkls',
+          startAt: new Date(2022, 2, 2, 12),
+          endAt: new Date(2022, 2, 2, 16),
+          claimedAt: undefined,
+          combination: ['1', '3', '5'],
+          isTraining: true,
+          isAutomata: false,
+          signature: 'flk3zx3fgdfalkfda',
+          isCombinationCorrect: true,
+        }),
+        new TrainingModel({
+          id: 'gba3fa',
+          playerId,
+          toyoId: 'fafda',
+          trainingEventId: 'gae3fa',
+          startAt: new Date(2022, 2, 2, 12),
+          endAt: new Date(2022, 2, 2, 16),
+          claimedAt: undefined,
+          combination: ['1', '3', '5'],
+          isTraining: true,
+          isAutomata: true,
+          signature: 'fagage4afgafda',
+          isCombinationCorrect: false,
+        }),
+      ];
+
+      const mockParseQueryConstructor = jest.mocked(Parse.Query);
+
+      const mockParseQuery = {
+        equalTo: jest.fn(),
+        find: jest.fn(),
+      };
+
+      when(mockParseQueryConstructor)
+        .calledWith(classes.TOYO_TRAINING)
+        .mockReturnValue(mockParseQuery as any);
+
+      const mockParseObjectConstructor = jest.mocked(Parse.Object);
+
+      const mockPlayerParseObject = {
+        id: playerId,
+      };
+
+      when(mockParseObjectConstructor)
+        .calledWith(classes.PLAYERS, {
+          id: playerId,
+        })
+        .mockReturnValue(mockPlayerParseObject as any);
+
+      mockParseQuery.find.mockImplementation(() => {
+        const objects = [];
+
+        for (const model of expectedModels) {
+          const object = {
+            id: model.id,
+            get: (key: string) => {
+              switch (key) {
+                case 'player':
+                  return { id: model.playerId };
+                case 'trainingEvent':
+                  return { id: model.trainingEventId };
+                case 'toyo':
+                  return { id: model.toyoId };
+                case 'startAt':
+                  return model.startAt;
+                case 'endAt':
+                  return model.endAt;
+                case 'claimAt':
+                  return model.claimedAt;
+                case 'combination':
+                  return model.combination;
+                case 'isTraining':
+                  return model.isTraining;
+                case 'isAutomata':
+                  return model.isAutomata;
+                case 'signature':
+                  return model.signature;
+                case 'combinationCorrect':
+                  return model.isCombinationCorrect;
+              }
+            },
+          };
+          objects.push(object);
+        }
+
+        return objects;
+      });
+
+      const response = await repository.getByPlayerAndInTraining(playerId);
+
+      expect(mockParseQuery.equalTo).toBeCalledWith(
+        'player',
+        mockPlayerParseObject,
+      );
+
+      expect(mockParseQuery.equalTo).toBeCalledWith('isTraining', true);
+
+      expect(response).toEqual(expectedModels);
     });
   });
   describe('save', () => {
@@ -181,6 +297,11 @@ describe('TrainingRepositoryImpl', () => {
       );
 
       expect(mockTrainingParseObject.set).toBeCalledWith(
+        'claimedAt',
+        trainingModel.claimedAt,
+      );
+
+      expect(mockTrainingParseObject.set).toBeCalledWith(
         'combination',
         trainingModel.combination,
       );
@@ -195,7 +316,119 @@ describe('TrainingRepositoryImpl', () => {
         trainingModel.isAutomata,
       );
 
+      expect(mockTrainingParseObject.set).toBeCalledWith(
+        'signature',
+        trainingModel.signature,
+      );
+
+      expect(mockTrainingParseObject.set).toBeCalledWith(
+        'combinationCorrect',
+        trainingModel.isCombinationCorrect,
+      );
+
       expect(response).toEqual(trainingModel);
+    });
+  });
+
+  describe('checkIfToyoWonEventPreviosly', () => {
+    it('should return true when there is more than one training with correct combination', async () => {
+      const trainingEventId = 'lf93fafd';
+      const toyoId = 'lfa0of';
+      const isAutomata = true;
+
+      const mockQueryConstructor = jest.mocked(Parse.Query);
+      const mockQuery = {
+        equalTo: jest.fn(),
+        count: jest.fn(),
+      };
+
+      const mockParseObjectConstructor = jest.mocked(Parse.Object);
+      const trainingEventParseObject = {};
+      const toyoParseObject = {};
+
+      when(mockParseObjectConstructor)
+        .calledWith(classes.TRAINING_EVENT, {
+          id: trainingEventId,
+        })
+        .mockReturnValue(trainingEventParseObject as any);
+
+      when(mockParseObjectConstructor)
+        .calledWith(classes.TOYO, {
+          id: toyoId,
+        })
+        .mockReturnValue(toyoParseObject as any);
+
+      when(mockQueryConstructor)
+        .calledWith(classes.TOYO_TRAINING)
+        .mockReturnValue(mockQuery as any);
+
+      mockQuery.count.mockResolvedValue(2);
+
+      const response = await repository.checkIfToyoWonEventPreviosly(
+        trainingEventId,
+        toyoId,
+        isAutomata,
+      );
+
+      expect(mockQuery.equalTo).toBeCalledWith(
+        'trainingEvent',
+        trainingEventParseObject,
+      );
+      expect(mockQuery.equalTo).toBeCalledWith('toyo', toyoParseObject);
+      expect(mockQuery.equalTo).toBeCalledWith('isAutomata', isAutomata);
+      expect(mockQuery.equalTo).toBeCalledWith('combinationCorrect', true);
+
+      expect(response).toBeTruthy();
+    });
+
+    it('should return false when there is only one training with correct combination', async () => {
+      const trainingEventId = 'lf93fafd';
+      const toyoId = 'lfa0of';
+      const isAutomata = true;
+
+      const mockQueryConstructor = jest.mocked(Parse.Query);
+      const mockQuery = {
+        equalTo: jest.fn(),
+        count: jest.fn(),
+      };
+
+      const mockParseObjectConstructor = jest.mocked(Parse.Object);
+      const trainingEventParseObject = {};
+      const toyoParseObject = {};
+
+      when(mockParseObjectConstructor)
+        .calledWith(classes.TRAINING_EVENT, {
+          id: trainingEventId,
+        })
+        .mockReturnValue(trainingEventParseObject as any);
+
+      when(mockParseObjectConstructor)
+        .calledWith(classes.TOYO, {
+          id: toyoId,
+        })
+        .mockReturnValue(toyoParseObject as any);
+
+      when(mockQueryConstructor)
+        .calledWith(classes.TOYO_TRAINING)
+        .mockReturnValue(mockQuery as any);
+
+      mockQuery.count.mockResolvedValue(1);
+
+      const response = await repository.checkIfToyoWonEventPreviosly(
+        trainingEventId,
+        toyoId,
+        isAutomata,
+      );
+
+      expect(mockQuery.equalTo).toBeCalledWith(
+        'trainingEvent',
+        trainingEventParseObject,
+      );
+      expect(mockQuery.equalTo).toBeCalledWith('toyo', toyoParseObject);
+      expect(mockQuery.equalTo).toBeCalledWith('isAutomata', isAutomata);
+      expect(mockQuery.equalTo).toBeCalledWith('combinationCorrect', true);
+
+      expect(response).toBeFalsy();
     });
   });
 });

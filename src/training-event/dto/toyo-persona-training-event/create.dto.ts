@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   isNotEmpty,
   IsNotEmpty,
   IsString,
@@ -76,11 +77,17 @@ export class ToyoPersonaTrainingEventCreateDto {
   @Type(() => CardTrainingRewardCreateDto)
   cardReward: CardTrainingRewardCreateDto;
 
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsBoolean()
+  isAutomata: boolean;
+
   constructor(attrs?: {
     trainingEventId: string;
     toyoPersonaId: string;
     correctBlowsCombinationIds: string[];
     cardReward: CardTrainingRewardCreateDto;
+    isAutomata: boolean;
   }) {
     if (attrs) {
       Object.assign(this, attrs);

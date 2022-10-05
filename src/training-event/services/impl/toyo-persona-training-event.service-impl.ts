@@ -52,6 +52,7 @@ export class ToyoPersonaTrainingEventServiceImpl
     const model = new ToyoPersonaTrainingEventModel({
       ...input,
       cardReward: new CardTrainingRewardModel({ ...input.cardReward }),
+      isAutomata: false,
     });
 
     const { id, cardReward } = await this._repository.save(model);
@@ -90,12 +91,14 @@ export class ToyoPersonaTrainingEventServiceImpl
 
   async getCurrent(
     toyoPersonaId: string,
+    isAutomata: boolean,
   ): Promise<ToyoPersonaTrainingEventGetCurrentDto> {
     const trainingEvent = await this._trainingEventService.getCurrent();
 
     const model = await this._repository.getByTrainingEventAndPersona(
       trainingEvent.id,
       toyoPersonaId,
+      isAutomata,
     );
 
     if (!model) {
@@ -109,10 +112,12 @@ export class ToyoPersonaTrainingEventServiceImpl
   async getByTrainingEventAndPersona(
     trainingEventId: string,
     toyoPersonaId: string,
+    isAutomata: boolean,
   ): Promise<ToyoPersonaTrainingEventDto> {
     const model = await this._repository.getByTrainingEventAndPersona(
       trainingEventId,
       toyoPersonaId,
+      isAutomata,
     );
 
     if (!model) {

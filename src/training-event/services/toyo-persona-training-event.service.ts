@@ -7,9 +7,11 @@ export interface ToyoPersonaTrainingEventService {
   create(createDto: ToyoPersonaTrainingEventCreateDto): Promise<UUID>;
   getCurrent(
     toyoPersonaId: string,
+    isAutomata: boolean,
   ): Promise<ToyoPersonaTrainingEventGetCurrentDto>;
   getByTrainingEventAndPersona(
     trainingEventId: string,
     toyoPersonaId: string,
+    isAutomata: boolean,
   ): Promise<ToyoPersonaTrainingEventDto>;
 }

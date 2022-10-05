@@ -7,5 +7,6 @@ export interface ToyoPersonaTrainingEventRepository {
   getByTrainingEventAndPersona(
     trainingEventId: string,
     toyoPersonaId: string,
+    isAutomata: boolean,
   ): Promise<ToyoPersonaTrainingEventModel>;
 }

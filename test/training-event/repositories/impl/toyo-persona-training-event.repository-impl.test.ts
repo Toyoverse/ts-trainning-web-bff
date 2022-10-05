@@ -24,6 +24,7 @@ describe('Toyo persona training event repository tests', () => {
           rotText: 'Lorem ipsum dolor sit amet.',
           type: '1',
         }),
+        isAutomata: false,
       });
 
       const mockId = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
@@ -150,6 +151,11 @@ describe('Toyo persona training event repository tests', () => {
         mockCardRewardParseObject.toPointer(),
       );
 
+      expect(mockToyoPersonaTrainingEventParseObject.set).toBeCalledWith(
+        'isAutomata',
+        input.isAutomata,
+      );
+
       expect(mockToyoPersonaTrainingEventParseObject.save).toBeCalled();
       expect(response).toEqual(expectedResponse);
     });
@@ -175,6 +181,7 @@ describe('Toyo persona training event repository tests', () => {
     test('When there is a toyo persona training event then return it', async () => {
       const toyoPersonaId = '1';
       const trainingEventId = '1';
+      const isAutomata = false;
 
       const expectedResponse = new ToyoPersonaTrainingEventModel({
         id: '1',
@@ -192,6 +199,7 @@ describe('Toyo persona training event repository tests', () => {
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut et.',
           type: '1',
         }),
+        isAutomata: isAutomata,
       });
 
       const parseQueryConstructor = jest.mocked(Parse.Query);
@@ -236,6 +244,10 @@ describe('Toyo persona training event repository tests', () => {
         .mockReturnValue(expectedResponse.correctBlowsCombinationIds);
 
       when(mockToyoPersonaTrainingEventParseObject.get)
+        .calledWith('isAutomata')
+        .mockReturnValue(expectedResponse.isAutomata);
+
+      when(mockToyoPersonaTrainingEventParseObject.get)
         .calledWith('cardReward')
         .mockReturnValue(mockCardRewardParseObject);
 
@@ -271,9 +283,10 @@ describe('Toyo persona training event repository tests', () => {
         mockToyoPersonaTrainingEventParseObject,
       );
 
-      const response = await repository.getByTrainingEventAndToyoPersona(
-        toyoPersonaId,
+      const response = await repository.getByTrainingEventAndPersona(
         trainingEventId,
+        toyoPersonaId,
+        isAutomata,
       );
 
       expect(mockToyoPersonaTrainingEventParseQuery.equalTo).toBeCalledWith(
@@ -285,12 +298,18 @@ describe('Toyo persona training event repository tests', () => {
         mockTrainingEventParseObject,
       );
 
+      expect(mockToyoPersonaTrainingEventParseQuery.equalTo).toBeCalledWith(
+        'isAutomata',
+        isAutomata,
+      );
+
       expect(response).toEqual(expectedResponse);
     });
 
     test('When there is no training event for toyo persona then return undefined', async () => {
       const toyoPersonaId = '1';
       const trainingEventId = '1';
+      const isAutomata = false;
 
       const parseQueryConstructor = jest.mocked(Parse.Query);
 
@@ -306,9 +325,10 @@ describe('Toyo persona training event repository tests', () => {
 
       mockToyoPersonaTrainingEventParseQuery.first.mockResolvedValue(undefined);
 
-      const response = await repository.getByTrainingEventAndToyoPersona(
-        toyoPersonaId,
+      const response = await repository.getByTrainingEventAndPersona(
         trainingEventId,
+        toyoPersonaId,
+        isAutomata,
       );
 
       expect(response).toEqual(undefined);

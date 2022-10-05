@@ -1,13 +1,16 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import di from '../../di';
 import toyoDi from 'src/external/toyo/di';
 import playerDi from 'src/external/player/di';
 import trainingEventDi from 'src/training-event/di';
+import { keccak256, toWei } from 'web3-utils';
+import { Eth } from 'web3-eth';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Web3Eth = require('web3-eth');
 import { TrainingRepository } from '../../../training/repositories/training.repository';
 import { TrainingService } from '../training.service';
 import { ToyoService } from 'src/external/toyo/services/toyo.service';
 import { TrainingEventService } from 'src/training-event/services/training-event.service';
-import { ToyoPersonaService } from 'src/external/toyo/services/toyo-persona.service';
 import { ToyoPersonaTrainingEventService } from 'src/training-event/services/toyo-persona-training-event.service';
 import { PlayerToyoService } from 'src/external/player/services/player-toyo.service';
 import { ForbiddenError } from 'src/errors/forbidden.error';
@@ -23,7 +26,10 @@ import { TrainingResponseDto } from 'src/training/dto/training-response.dto';
 import { TrainingEventGetCurrentDto } from 'src/training-event/dto/training-event/get-current.dto';
 import { ListTrainingDto } from 'src/training/dto/list.dto';
 import { arraysEquals } from 'src/utils/general/arrays';
-import { classes } from 'src/config/back4app';
+import { BadGatewayError } from 'src/errors/bad-gateway.error';
+import { ToyoDto } from 'src/external/player/dto/toyo.dto';
+import { ToyoPersonaTrainingEventDto } from 'src/training-event/dto/toyo-persona-training-event/dto';
+import { TrainingEventDto } from 'src/training-event/dto/training-event/dto';
 
 @Injectable()
 export class TrainingServiceImpl implements TrainingService {
@@ -40,8 +46,6 @@ export class TrainingServiceImpl implements TrainingService {
     private playerToyoService: PlayerToyoService,
     @Inject(toyoDi.TOYO_SERVICE)
     private toyoService: ToyoService,
-    @Inject(toyoDi.TOYO_PERSONA_SERVICE)
-    private toyoPersonaService: ToyoPersonaService,
   ) {}
 
   async start(dto: TrainingStartRequestDto): Promise<TrainingResponseDto> {
@@ -52,7 +56,7 @@ export class TrainingServiceImpl implements TrainingService {
         dto.isAutomata,
       );
 
-      this._checkOwnership(toyo);
+      this._checkToyoOwnership(toyo);
       await this._checkIfToyoIsInTraining(toyo);
 
       const currentTrainingEvent = await this.trainingEventService.getCurrent();
@@ -117,7 +121,7 @@ export class TrainingServiceImpl implements TrainingService {
     return toyo;
   }
 
-  private _checkOwnership(toyo: any) {
+  private _checkToyoOwnership(toyo: any) {
     if (!toyo) {
       throw new ForbiddenError('Access denied');
     }
@@ -148,59 +152,107 @@ export class TrainingServiceImpl implements TrainingService {
     }
   }
 
-  // FIXME - handle exceptions more elegantly
   async getSignature(
     id: string,
     loggedPlayerId: string,
   ): Promise<TrainingResponseDto> {
+    const training = await this.trainingRepository.getById(id);
+    if (!training) {
+      throw new NotFoundError(`Training not found with id ${id}`, {
+        ctx: this.name,
+      });
+    }
+
+    if (loggedPlayerId !== training.playerId) {
+      throw new ForbiddenError('Forbidden', { ctx: this.name });
+    }
+
+    const toyo = await this._getTrainingToyo(training);
+
+    let trainingEvent: TrainingEventDto;
+    let toyoPersonaTrainingEvent: ToyoPersonaTrainingEventDto;
+
     try {
-      const training = await this.trainingRepository.getTrainingById(id);
-      const playerId = training.get('player').id;
-
-      if (!training || training.get('claimedAt') !== undefined) {
-        throw new NotFoundException('Training not found or already claimed');
-      }
-
-      if (loggedPlayerId !== playerId) {
-        throw new ForbiddenError(
-          'You cannot close a training of toyo that you do not have',
-        );
-      }
-
-      const toyoId = training.get('toyo').id;
-      const toyo = await this.toyoService.getToyoById(toyoId);
-
-      const toyoPersona = await this.toyoPersonaService.getById(
-        toyo.get('toyoPersonaOrigin').id,
+      trainingEvent = await this.trainingEventService.getById(
+        training.trainingEventId,
       );
 
-      const trainingEvent = await this.trainingEventService.getById(
-        training.get('trainingEvent').id,
-      );
-
-      const toyoPersonaTrainingEvent =
+      toyoPersonaTrainingEvent =
         await this.toyoPersonaTrainingEventService.getByTrainingEventAndPersona(
-          trainingEvent.id,
-          toyoPersona.id,
+          training.trainingEventId,
+          toyo.personaId,
+          training.isAutomata,
         );
+    } catch (error) {
+      throw new InternalServerError('Internal server error', {
+        ctx: this.name,
+        cause: error.message,
+      });
+    }
 
-      const model = await this.trainingRepository.getSignature(
-        training,
-        toyo,
-        new Parse.Object(classes.TRAINING_EVENT, { id: trainingEvent.id }),
-        toyoPersonaTrainingEvent,
+    const hasToyoAlreadyWonEvent =
+      await this.trainingRepository.checkIfToyoWonEventPreviosly(
+        training.trainingEventId,
+        training.toyoId,
+        training.isAutomata,
       );
 
-      return model;
-    } catch (e) {
-      if (e.name === Error.name || e.name === InternalServerError.name) {
-        throw new InternalServerError(
-          `Internal server error found when tried to close the training ${id} onwed by player ${loggedPlayerId} `,
-          { cause: e.message, ctx: this.name },
-        );
+    const isCombinationCorrect = training.isCombinationCorrect;
+
+    const cardReward =
+      isCombinationCorrect && !hasToyoAlreadyWonEvent
+        ? toyoPersonaTrainingEvent.cardReward
+        : undefined;
+
+    const bondReward = training.isCombinationCorrect
+      ? trainingEvent.bondReward + trainingEvent.bonusBondReward
+      : trainingEvent.bondReward;
+
+    const formattedBondReward = toWei(bondReward.toString(), 'ether');
+
+    const eth: Eth = new Web3Eth();
+
+    const message = keccak256(
+      eth.abi.encodeParameters(
+        ['string', 'uint256', 'uint256', 'string'],
+        [
+          training.id,
+          toyo.tokenId,
+          formattedBondReward,
+          cardReward?.cardCode || '',
+        ],
+      ),
+    );
+
+    const { signature } = eth.accounts.sign(message, process.env.PRIVATE_KEY);
+
+    return new TrainingResponseDto({
+      id: training.id,
+      combination: training.combination,
+      startAt: training.startAt,
+      endAt: training.endAt,
+      claimedAt: training.claimedAt,
+      isCombinationCorrect: training.isCombinationCorrect,
+      isAutomata: training.isAutomata,
+      toyoTokenId: toyo.tokenId,
+      bond: formattedBondReward,
+      card: cardReward,
+      signature,
+    });
+  }
+
+  private async _getTrainingToyo(training: TrainingModel): Promise<ToyoDto> {
+    try {
+      return await this.toyoService.getById(training.toyoId);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw new BadGatewayError('Fail to get signature', {
+          ctx: this.name,
+          cause: error.message,
+        });
       }
 
-      throw e;
+      throw error;
     }
   }
 
@@ -251,8 +303,22 @@ export class TrainingServiceImpl implements TrainingService {
   }
 
   async list(playerId: string): Promise<ListTrainingDto[]> {
-    const data = await this.trainingRepository.list(playerId);
-    return data;
+    const models = await this.trainingRepository.getByPlayerAndInTraining(
+      playerId,
+    );
+
+    await this.trainingRepository.resetPlayerTrainings(playerId);
+
+    return models.map((model) => {
+      return new ListTrainingDto({
+        id: model.id,
+        combination: model.combination,
+        startAt: model.startAt,
+        endAt: model.endAt,
+        claimedAt: model.claimedAt,
+        isAutomata: model.isAutomata,
+      });
+    });
   }
 
   async getResult(
@@ -276,6 +342,7 @@ export class TrainingServiceImpl implements TrainingService {
         await this.toyoPersonaTrainingEventService.getByTrainingEventAndPersona(
           training.trainingEventId,
           toyo.personaId,
+          training.isAutomata,
         );
 
       const eventCombination = personaTrainingEvent.combination;
@@ -290,14 +357,28 @@ export class TrainingServiceImpl implements TrainingService {
         training.trainingEventId,
       );
 
+      training.isCombinationCorrect = combinationResult.isCombinationCorrect;
+      await this.trainingRepository.save(training);
+
       const trainingBondReward = this._calculateBondReward(
         combinationResult.isCombinationCorrect,
         trainingEvent.bondReward,
         trainingEvent.bonusBondReward,
       );
 
-      training.isCombinationCorrect = combinationResult.isCombinationCorrect;
-      await this.trainingRepository.save(training);
+      const hasToyoAlreadyWonEvent =
+        await this.trainingRepository.checkIfToyoWonEventPreviosly(
+          training.trainingEventId,
+          training.toyoId,
+          training.isAutomata,
+        );
+
+      const isCombinationCorrect = combinationResult.isCombinationCorrect;
+
+      const cardReward =
+        isCombinationCorrect && !hasToyoAlreadyWonEvent
+          ? personaTrainingEvent.cardReward
+          : undefined;
 
       return new TrainingResponseDto({
         id: training.id,
@@ -309,7 +390,7 @@ export class TrainingServiceImpl implements TrainingService {
         signature: undefined,
         combination: training.combination,
         isAutomata: false,
-        card: personaTrainingEvent.cardReward,
+        card: cardReward,
         isCombinationCorrect: combinationResult.isCombinationCorrect,
         combinationResult: combinationResult.result,
       });

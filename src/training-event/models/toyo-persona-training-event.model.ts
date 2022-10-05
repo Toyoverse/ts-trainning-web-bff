@@ -6,6 +6,7 @@ export class ToyoPersonaTrainingEventModel {
   toyoPersonaId: string;
   correctBlowsCombinationIds: string[];
   cardReward: CardTrainingRewardModel;
+  isAutomata: boolean;
 
   constructor(attrs?: {
     id?: string;
@@ -13,6 +14,7 @@ export class ToyoPersonaTrainingEventModel {
     toyoPersonaId: string;
     correctBlowsCombinationIds: string[];
     cardReward: CardTrainingRewardModel;
+    isAutomata: boolean;
   }) {
     if (attrs) {
       this.id = attrs.id;
@@ -20,6 +22,7 @@ export class ToyoPersonaTrainingEventModel {
       this.toyoPersonaId = attrs.toyoPersonaId;
       this.correctBlowsCombinationIds = attrs.correctBlowsCombinationIds;
       this.cardReward = attrs.cardReward;
+      this.isAutomata = attrs.isAutomata;
     }
   }
 }

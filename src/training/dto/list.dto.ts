@@ -6,13 +6,13 @@ export class ListTrainingDto {
   id?: string;
 
   @ApiProperty()
-  startAt: Date | number;
+  startAt: Date;
 
   @ApiProperty()
-  endAt: Date | number;
+  endAt: Date;
 
   @ApiProperty()
-  claimedAt?: Date | number;
+  claimedAt?: Date;
 
   @ApiProperty()
   toyoTokenId?: string;
@@ -26,15 +26,19 @@ export class ListTrainingDto {
   @ApiProperty()
   card?: CardTrainingRewardGetCurrentDto;
 
+  @ApiProperty()
+  isAutomata: boolean;
+
   constructor(attrs: {
     id?: string;
-    startAt: Date | number;
-    endAt: Date | number;
-    claimedAt?: Date | number;
+    startAt: Date;
+    endAt: Date;
+    claimedAt?: Date;
     toyoTokenId?: string;
     signature?: string;
     combination: string[];
     card?: CardTrainingRewardGetCurrentDto;
+    isAutomata: boolean;
   }) {
     this.id = attrs.id;
     this.startAt = attrs.startAt;
@@ -44,5 +48,6 @@ export class ListTrainingDto {
     this.signature = attrs.signature;
     this.combination = attrs.combination;
     this.card = attrs.card;
+    this.isAutomata = attrs.isAutomata;
   }
 }

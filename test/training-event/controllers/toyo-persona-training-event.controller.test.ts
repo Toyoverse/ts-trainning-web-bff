@@ -32,6 +32,7 @@ describe('Toyo persona training events controller tests', () => {
           rotText: 'Lorem ipsum dolor sit amet.',
           type: '1',
         }),
+        isAutomata: false,
       });
 
       const mockId = '7a6f1652-0864-4a87-be10-dc96bcddf76b';
@@ -51,6 +52,7 @@ describe('Toyo persona training events controller tests', () => {
   describe('Get current toyo persona training event', () => {
     test('Return current toyo persona training event', async () => {
       const toyoPersonaId = '1';
+      const isAutomata = false;
 
       const expectedResponse = new ToyoPersonaTrainingEventGetCurrentDto({
         id: '1',
@@ -68,10 +70,10 @@ describe('Toyo persona training events controller tests', () => {
       });
 
       when(mockService.getCurrent)
-        .calledWith(toyoPersonaId)
+        .calledWith(toyoPersonaId, isAutomata)
         .mockResolvedValue(expectedResponse);
 
-      const response = await controller.getCurrent(toyoPersonaId);
+      const response = await controller.getCurrent(toyoPersonaId, isAutomata);
 
       expect(response).toEqual(expectedResponse);
     });

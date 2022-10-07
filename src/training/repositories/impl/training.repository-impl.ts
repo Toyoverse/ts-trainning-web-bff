@@ -221,41 +221,70 @@ export class TrainingRepositoryImpl implements TrainingRepository {
   ): Promise<Parse.Object<Parse.Attributes>[]> {
     try {
       if (trainings.length > 0) {
-        const claimedsOnChain = await this.getClaimsByWalletAddress(
-          trainings[0].get('player').get('walletAddress'),
-        );
+        // const claimedsOnChain = await this.getClaimsByWalletAddress(
+        //   trainings[0].get('player').get('walletAddress'),
+        // );
 
-        const trainingsToReset = trainings.filter((training) => {
-          return !training.get('isTraining');
+        const openTrainings = trainings.filter((training) => {
+          return training.get('isTraining');
         });
 
-        if (claimedsOnChain.length > trainingsToReset.length) {
-          trainings.sort((a, b) => {
-            return (
-              new Date(b.get('updatedAt')).getTime() -
-              new Date(a.get('updatedAt')).getTime()
-            );
-          });
-
+        for (const training of openTrainings) {
           const onchain = await this.getTokenOwnerEntityByTokenId(
-            trainings[0].get('toyo').get('tokenId'),
+            training.get('toyo').get('tokenId'),
           );
 
-          const now = new Date();
-          const endAt = new Date(trainings[0].get('endAt'));
-
-          const diff = Math.abs(now.getTime() - endAt.getTime());
-
-          const minutes = endAt < now ? Math.floor(diff / 1000 / 60) : 31;
-
-          if (minutes <= 30 || !onchain[0].isStaked) {
-            trainings[0].set('claimedAt', new Date());
-            trainings[0].set('isTraining', false);
-            await trainings[0].save();
-
-            trainings.splice(0, 1);
+          if (!onchain[0].isStaked) {
+            training.set('claimedAt', new Date());
+            training.set('isTraining', false);
+            await training.save();
           }
         }
+
+        // if (claimedsOnChain.length > trainingsToReset.length) {
+        //   console.log('tem mais claims no chain que treinos fechados');
+        //   trainings.sort((a, b) => {
+        //     return (
+        //       new Date(b.get('updatedAt')).getTime() -
+        //       new Date(a.get('updatedAt')).getTime()
+        //     );
+        //   });
+
+        //   const onchain = await this.getTokenOwnerEntityByTokenId(
+        //     trainings[0].get('toyo').get('tokenId'),
+        //   );
+
+        //   console.log(
+        //     `trainings[0].get('toyo').get('tokenId'): ${trainings[0]
+        //       .get('toyo')
+        //       .get('tokenId')}`,
+        //   );
+
+        //   console.log(`onchain[0].tokenId: ${onchain[0].tokenId}`);
+
+        //   const now = new Date();
+        //   const endAt = new Date(trainings[0].get('endAt'));
+
+        //   const diff = Math.abs(now.getTime() - endAt.getTime());
+
+        //   const minutes = endAt < now ? Math.floor(diff / 1000 / 60) : 31;
+
+        //   console.log(
+        //     `A diferença entre a data que deveria terminar e agora é de: ${minutes} minutos.`,
+        //   );
+
+        //   console.log(`onchain[0].isStaked: ${onchain[0].isStaked}.`);
+
+        //   if (minutes <= 30 || !onchain[0].isStaked) {
+        //     console.log(
+        //       `o treino que vou fechar manualmente é: ${trainings[0].id}.`,
+        //     );
+        //     trainings[0].set('claimedAt', new Date());
+        //     trainings[0].set('isTraining', false);
+        //     await trainings[0].save();
+        //     trainings.splice(0, 1);
+        //   }
+        // }
       }
     } catch (e) {
       throw new InternalServerErrorException(e);

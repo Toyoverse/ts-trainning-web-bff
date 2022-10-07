@@ -53,7 +53,7 @@ export class CurrentPlayerInterceptor implements NestInterceptor {
       return next.handle();
     } catch (e) {
       // const request = context.switchToHttp().getRequest();
-      // const walletId = '0x0000000000000000000000000000000000000000';
+      // const walletId = '0x3a782065b1f34ad4813b0f765399f0c2401f1156';
       // const player = await this.playerService.getPlayerByWalletId(walletId);
 
       // request.player = player;

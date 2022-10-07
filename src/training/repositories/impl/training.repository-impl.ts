@@ -228,14 +228,8 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         const trainingsToReset = trainings.filter((training) => {
           return !training.get('isTraining');
         });
-        const onchain = await this.getTokenOwnerEntityByTokenId(
-          trainings[0].get('toyo').get('tokenId'),
-        );
 
-        if (
-          claimedsOnChain.length > trainingsToReset.length ||
-          !onchain[0].isStaked
-        ) {
+        if (claimedsOnChain.length > trainingsToReset.length) {
           trainings.sort((a, b) => {
             return (
               new Date(b.get('updatedAt')).getTime() -
@@ -243,11 +237,24 @@ export class TrainingRepositoryImpl implements TrainingRepository {
             );
           });
 
-          trainings[0].set('claimedAt', new Date());
-          trainings[0].set('isTraining', false);
-          await trainings[0].save();
+          const onchain = await this.getTokenOwnerEntityByTokenId(
+            trainings[0].get('toyo').get('tokenId'),
+          );
 
-          trainings.splice(0, 1);
+          const now = new Date();
+          const endAt = new Date(trainings[0].get('endAt'));
+
+          const diff = Math.abs(now.getTime() - endAt.getTime());
+
+          const minutes = endAt < now ? Math.floor(diff / 1000 / 60) : 31;
+
+          if (minutes <= 30 || !onchain[0].isStaked) {
+            trainings[0].set('claimedAt', new Date());
+            trainings[0].set('isTraining', false);
+            await trainings[0].save();
+
+            trainings.splice(0, 1);
+          }
         }
       }
     } catch (e) {

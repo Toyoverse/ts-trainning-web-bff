@@ -121,6 +121,7 @@ export class TrainingRepositoryImpl implements TrainingRepository {
 
       training.set('claimedAt', new Date());
       training.set('isTraining', false);
+      training.set('reopenIfStaked', true);
 
       const savedTraining = await training.save();
       savedTraining.set('signature', undefined);
@@ -226,7 +227,11 @@ export class TrainingRepositoryImpl implements TrainingRepository {
         // );
 
         const openTrainings = trainings.filter((training) => {
-          return training.get('isTraining');
+          return training.get('isTraining') === true;
+        });
+
+        const closedTrainings = trainings.filter((training) => {
+          return training.get('reopenIfStaked') === true;
         });
 
         for (const training of openTrainings) {
@@ -237,6 +242,21 @@ export class TrainingRepositoryImpl implements TrainingRepository {
           if (!onchain[0].isStaked) {
             training.set('claimedAt', new Date());
             training.set('isTraining', false);
+            await training.save();
+          }
+        }
+
+        for (const training of closedTrainings) {
+          const onchain = await this.getTokenOwnerEntityByTokenId(
+            training.get('toyo').get('tokenId'),
+          );
+
+          if (onchain[0].isStaked) {
+            training.unset('claimedAt');
+            training.set('isTraining', true);
+            await training.save();
+          } else {
+            training.set('reopenIfStaked', false);
             await training.save();
           }
         }
